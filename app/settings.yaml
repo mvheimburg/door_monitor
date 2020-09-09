@@ -1,0 +1,22 @@
+alarm:
+  code: '1230'
+dimmer:
+  day_hour: 6
+  day_min: 30
+  day_sec: 0
+  day_value: 200
+  night_hour: 22
+  night_min: 0
+  night_sec: 0
+  night_value: 33
+mqtt:
+  fail: MQTT Messaging Failed
+  sent: ''
+piezo:
+  pin: 23
+screen:
+  x: '800'
+  y: '480'
+warnings:
+  backlight: '[WARNING] BACKLIGHT not connected'
+  gpio: '[WARNING] GPIO not connected'
