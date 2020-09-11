@@ -1,5 +1,6 @@
+json_sempai
+PyYAML
+paho-mqtt
+rpi-backlight
 Kivy==1.11.1
 kivymd==0.104.0
-json_sempai==0.4.0
-PyYAML==5.3.1
-paho-mqtt

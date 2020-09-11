@@ -1,16 +1,19 @@
-import kivy
-kivy.require("1.9.0")
+# import kivy
+# kivy.require("1.9.0")
+
 
 import sys
 import time
 import random
-import yaml
 import io
 import urllib
 import os.path
 import os
 import datetime
 import threading
+from collections import deque
+
+import yaml
 from kivy.app import App
 from kivy.config import Config
 from kivy.lang import Builder
@@ -29,7 +32,13 @@ from kivy.clock import Clock
 from kivy.uix.label import Label
 import paho.mqtt.publish as publish
 import paho.mqtt.client as mqtt
-from collections import deque
+
+
+
+server = os.environ.get('MQTT_SERVER', 'mqtt://localhost:1883')
+username = os.environ.get('MQTT_USERNAME', None)
+password = os.environ.get('MQTT_PASSWORD', None)
+client_id = os.environ.get('MQTT_CLIENT_ID', None)
 
 # Settings file now implemented. Refer to settings.yaml and try to avoid changing the code below
 # TODO: Hard-code appSetting variables directly to the command, instead of referring through a 3rd variable
@@ -41,7 +50,8 @@ def _yaml_to_dict(path):
     return ret_dict
 
 appSettings = _yaml_to_dict(cwd + "/settings.yaml")
-appSecrets = _yaml_to_dict(cwd + "/secrets.yaml")
+
+
 
 
 # Screen setup. Official RPi touch screen is 800(x) x 480(y)
@@ -52,15 +62,13 @@ screen_res_y = appSettings['screen']['y']
 alarmCode = appSettings['alarm']['code']
 
 # MQTT setup
-broker_address = appSecrets['mqtt']['broker']
-broker_port = appSecrets['mqtt']['port']
-broker_clientid = appSecrets['mqtt']['client_id']
-broker_statetopic = appSecrets['mqtt']['state_topic']
-broker_comtopic = appSecrets['mqtt']['com_topic']
+broker_clientid = client_id
+broker_statetopic = appSettings['mqtt']['state_topic']
+broker_comtopic = appSettings['mqtt']['com_topic']
 broker_lastmsg = ""
 
 # GPIO setup. Use BCM pin numbering (i.e GPIO18 = 18)
-buzzerPin = appSettings['piezo']['pin']
+# buzzerPin = appSettings['piezo']['pin']
 
 # Text updates for UI and Backend. Change if you want.
 sentText = appSettings['mqtt']['sent']
@@ -80,17 +88,19 @@ dimmer_day = dimmer_day.strftime("%H:%M:%S")
 try:
     import RPi.GPIO as GPIO
     GPIO.setmode(GPIO.BCM)
-    GPIO.setup(buzzerPin, GPIO.OUT)
-    GPIO.output(buzzerPin, 0)
+    # GPIO.setup(buzzerPin, GPIO.OUT)
+    # GPIO.output(buzzerPin, 0)
 except Exception as e:
-    print("Error importing RPi.GPIO. try SUDO or make sure RPi.GPIO module is installed.")
-    print(e)
+    pass
+    # print("Error importing RPi.GPIO. try SUDO or make sure RPi.GPIO module is installed.")
+    # print(e)
 
-try:
-    import rpi_backlight as bl
-    bl.set_brightness(appSettings['dimmer']['day_value'])
-except Exception:
-    print("Error starting backlight. Try SUDO or make sure rpi_backlight module is installed.")
+# try:
+#     from rpi_backlight import Backlight
+#     bl = Backlight()
+#     bl.set_brightness(appSettings['dimmer']['day_value'])
+# except Exception:
+#     print("Error starting backlight. Try SUDO or make sure rpi_backlight module is installed.")
 
 # Set graphic display
 Config.set('graphics', 'width', screen_res_x)
@@ -101,45 +111,45 @@ def left(s, amount):
     return s[:amount]
 
 # Threaded Piezo loop to avoid stalling the GUI when buttons are pressed
-def makeBeep(length):
-    global buzzerPin
-    if (length == 0):
-        try:
-            GPIO.output(buzzerPin, 0)
-        except Exception:
-            print (gpio_warning)
-    else:
-        try:
-            GPIO.output(buzzerPin, 1)
-            time.sleep(length)
-            GPIO.output(buzzerPin, 0)
-        except Exception:
-            print (gpio_warning)
+# def makeBeep(length):
+#     global buzzerPin
+#     if (length == 0):
+#         try:
+#             GPIO.output(buzzerPin, 0)
+#         except Exception:
+#             print (gpio_warning)
+#     else:
+#         try:
+#             GPIO.output(buzzerPin, 1)
+#             time.sleep(length)
+#             GPIO.output(buzzerPin, 0)
+#         except Exception:
+#             print (gpio_warning)
 
 # Progress bar callback for when "PENDING" is displayed 
 def progBar(dt):
-    global buzzerPin
+    # global buzzerPin
     global gpio_warning
     if (App.get_running_app().root.ids.bar.value == App.get_running_app().root.ids.bar.max):
         App.get_running_app().root.ids.bar.value = 0
-        try:
-            GPIO.output(buzzerPin, 0)
-        except Exception:
-            print (gpio_warning)
-        return False
+        # try:
+        #     # GPIO.output(buzzerPin, 0)
+        # except Exception:
+        #     print (gpio_warning)
+        # return False
     elif (App.get_running_app().root.ids.status.text != "PENDING") & (App.get_running_app().root.ids.status.text != "TRIGGERED"):
         App.get_running_app().root.ids.bar.value = 0
-        try:
-            GPIO.output(buzzerPin, 0)
-        except Exception:
-            print (gpio_warning)
-        return False
+        # try:
+        #     GPIO.output(buzzerPin, 0)
+        # except Exception:
+        #     print (gpio_warning)
+        # return False
     else:
         App.get_running_app().root.ids.bar.value = App.get_running_app().root.ids.bar.value + 0.5
-        try:
-            GPIO.output(buzzerPin, 1)
-        except Exception:
-            print (gpio_warning)
+        # try:
+        #     GPIO.output(buzzerPin, 1)
+        # except Exception:
+        #     print (gpio_warning)
 
 def dimmer_checker(dt):
     global dimmer_day
@@ -148,24 +158,24 @@ def dimmer_checker(dt):
     curtime = datetime.datetime.now()
     curtime = curtime.strftime("%H:%M:%S")
 
-    if ((curtime > dimmer_night) & (curtime > dimmer_day)) | ((curtime < dimmer_night) & (curtime < dimmer_day)):
-        print("[INFO   ] Night Mode Active")
-        try:
-            bl.set_brightness(appSettings['dimmer']['night_value'], smooth=True, duration=10)
-        except Exception:
-            print(bl_warning)
-    else:
-        print("[INFO   ] Day Mode Active")
-        try:
-            bl.set_brightness(appSettings['dimmer']['day_value'], smooth=True, duration=10)
-        except Exception:
-            print(bl_warning)
+    # if ((curtime > dimmer_night) & (curtime > dimmer_day)) | ((curtime < dimmer_night) & (curtime < dimmer_day)):
+    #     print("[INFO   ] Night Mode Active")
+    #     try:
+    #         bl.set_brightness(appSettings['dimmer']['night_value'], smooth=True, duration=10)
+    #     except Exception:
+    #         print(bl_warning)
+    # else:
+    #     print("[INFO   ] Day Mode Active")
+    #     try:
+    #         bl.set_brightness(appSettings['dimmer']['day_value'], smooth=True, duration=10)
+    #     except Exception:
+    #         print(bl_warning)
 
 def on_message(client, userdata, message):
     try:
         global broker_statetopic
-        print("[INFO   ] MQTT Message: " ,str(message.payload.decode("utf-8")))
-        print("[INFO   ] MQTT Topic: " ,str(message.topic))
+        # print("[INFO   ] MQTT Message: " ,str(message.payload.decode("utf-8")))
+        # print("[INFO   ] MQTT Topic: " ,str(message.topic))
         msgPreformat = str(message.payload.decode("utf-8")) 
         msgFormatted = str.replace(msgPreformat,"_"," ").upper()
         if (message.topic == broker_statetopic):
@@ -175,46 +185,55 @@ def on_message(client, userdata, message):
             App.get_running_app().root.ids.bar.value = 0
             App.get_running_app().root.ids.bar.max = 60
             doProg = Clock.schedule_interval(progBar, 0.5)
-        elif (message.topic == "panel/backlight"):
-            try:
-                bl.set_brightness(int(message.payload.decode("utf-8")))
-            except Exception as e:
-                print(bl_warning)
-                print (e)
-    except Exception as e: print(e)
+        # elif (message.topic == "panel/backlight"):
+        #     try:
+        #         bl.set_brightness(int(message.payload.decode("utf-8")))
+        #     except Exception as e:
+        #         print(bl_warning)
+        #         print (e)
+    except Exception as e: 
+        # print(e)
+        pass
 
-client = mqtt.Client(broker_clientid) #create new instance
-client.connect(broker_address,broker_port) #connect to broker
+client = mqtt.Client(broker_clientid) 
+server_parsed = urllib.parse.urlparse(server)
+client.username_pw_set(username, password=password)#create new instance
+client.connect(server_parsed.hostname, port=server_parsed.port, keepalive=60) #connect to broker
 client.on_message=on_message
 client.subscribe(broker_statetopic)
 client.subscribe("panel/backlight")
 client.loop_start()
 doDimmer = Clock.schedule_interval(dimmer_checker, 60)
 
+def connect_to_broker(self, server, username=None, password=None):
+    # print(f"connecting to server {server}")
+    # print(f"Username: {username}, Password: {password}")
+    server_parsed = urllib.parse.urlparse(server)
+    self._mqttc.username_pw_set(username, password=password)
+    self._mqttc.connect(server_parsed.hostname, port=server_parsed.port, keepalive=60)
 
+# class RestartPopup(Popup):
+#     def doRestart(self):
+#         os.system("sudo shutdown -r 1")
+#         # print("Rebooting in 60 seconds...")
+#         try:
+#             p = psutil.Process(os.getpid())
+#             for handler in p.get_open_files() + p.connections():
+#                 os.close(handler.fd)
+#         except Exception as e:
+#             # print ("[WARNING] ", e)
 
-class RestartPopup(Popup):
-    def doRestart(self):
-        os.system("sudo shutdown -r 1")
-        print("Rebooting in 60 seconds...")
-        try:
-            p = psutil.Process(os.getpid())
-            for handler in p.get_open_files() + p.connections():
-                os.close(handler.fd)
-        except Exception as e:
-            print ("[WARNING] ", e)
-
-        python = sys.executable
-        os.execl(python, python, *sys.argv)
+#         python = sys.executable
+#         os.execl(python, python, *sys.argv)
 
 class MenuPopup(Popup):
     def changeSlider(self, value):
         global bl_warning
-        print (int(value))
-        try:    
-            bl.set_brightness(int(value))
-        except Exception:
-            print (bl_warning)
+        # print (int(value))
+        # try:    
+        #     bl.set_brightness(int(value))
+        # except Exception:
+        #     print (bl_warning)
 
     def checkLeftBtn(self, labelText):
         appSettings['mqtt']['broker'] = str(self.ids.mqtt_host.text)
@@ -223,7 +242,7 @@ class MenuPopup(Popup):
         appSettings['mqtt']['pass'] = str(self.ids.mqtt_pass.text)
         appSettings['mqtt']['state_topic'] = str(self.ids.mqtt_state.text)
         appSettings['mqtt']['com_topic'] = str(self.ids.mqtt_com.text)
-        appSettings['piezo']['pin'] = int(self.ids.buzzer_pin.text)
+        # appSettings['piezo']['pin'] = int(self.ids.buzzer_pin.text)
         appSettings['alarm']['code'] = str(self.ids.alarm_code.text)
         appSettings['screen']['x'] = str(self.ids.screen_x.text)
         appSettings['screen']['y'] = str(self.ids.screen_y.text)
@@ -238,8 +257,8 @@ class MenuPopup(Popup):
         cwd = os.path.dirname(os.path.abspath(__file__))
         with open(cwd + '/settings.yaml', 'w') as outfile:
             yaml.dump(appSettings, outfile, default_flow_style=False)
-        popup2 = RestartPopup()
-        popup2.open()
+        # popup2 = RestartPopup()
+        # popup2.open()
         self.dismiss()
 
 class MjpegViewer(Image):
@@ -294,11 +313,9 @@ def Screensaver(Popup):
 class AlarmGridLayout(GridLayout):
     def checkCode(self, code, mode):
         global broker_lastmsg
-        global broker_address
-        global broker_port
         global broker_statetopic
         global broker_comtopic
-        global buzzerPin
+        # global buzzerPin
         global screen_res_x
         global screen_res_y
         global gpio_warning
@@ -338,7 +355,7 @@ class AlarmGridLayout(GridLayout):
                     popup.ids.mqtt_pass.text = appSettings['mqtt']['pass']
                     popup.ids.mqtt_state.text = appSettings['mqtt']['state_topic']
                     popup.ids.mqtt_com.text = appSettings['mqtt']['com_topic']
-                    popup.ids.buzzer_pin.text = str(appSettings['piezo']['pin'])
+                    # popup.ids.buzzer_pin.text = str(appSettings['piezo']['pin'])
                     popup.ids.alarm_code.text = appSettings['alarm']['code']
                     popup.ids.screen_x.text = appSettings['screen']['x']
                     popup.ids.screen_y.text = appSettings['screen']['y']
@@ -355,20 +372,20 @@ class AlarmGridLayout(GridLayout):
                     Clock.schedule_interval(clockwidget.update, 1)
 
             App.get_running_app().root.ids.entry.text = ""
-            try:
-                piezoBeep = threading.Thread(makeBeep(0.8))
-                piezoBeep.start()
-            except Exception:
-                print (gpio_warning)
+            # try:
+            #     piezoBeep = threading.Thread(makeBeep(0.8))
+            #     piezoBeep.start()
+            # except Exception:
+            #     print (gpio_warning)
 
     def processBtn(self, btn):
         global gpio_warning
         self.display.text += btn
-        try:
-            piezoBeep = threading.Thread(makeBeep(0.2))
-            piezoBeep.start()
-        except Exception:
-            print (gpio_warning)
+        # try:
+        #     piezoBeep = threading.Thread(makeBeep(0.2))
+        #     piezoBeep.start()
+        # except Exception:
+        #     print (gpio_warning)
 
 class CrudeClock(Label):    
     def update(self, *args):
@@ -393,4 +410,5 @@ MQTTApp.run()
 try:
     GPIO.cleanup()
 except Exception:
-    print("Error cleaning up, but continuing on....")
+    pass
+    # print("Error cleaning up, but continuing on....")

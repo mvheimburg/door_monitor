@@ -11,6 +11,8 @@ dimmer:
   night_value: 33
 mqtt:
   fail: MQTT Messaging Failed
+  com_topic: doormonitor/command/topic
+  state_topic: doormonitor/state/topic
   sent: ''
 piezo:
   pin: 23
