@@ -1,0 +1,4 @@
+pyserial 
+twine 
+ndef 
+nfcpy

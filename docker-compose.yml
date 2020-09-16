@@ -1,0 +1,19 @@
+version: '2.1'
+services:
+  gui:
+    build: ./gui
+    privileged: true
+    restart: always
+    network_mode: host
+  presence:
+    build: ./presence
+    cap_add:
+      - NET_ADMIN
+    restart: always
+    network_mode: host
+  nfc:
+    build: ./nfc
+    devices:
+      - "/dev/tty:S0:/dev/tty:S0"
+    restart: always
+    network_mode: host

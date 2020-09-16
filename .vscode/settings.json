@@ -1,4 +1,5 @@
 {
     "python.linting.pylintEnabled": true,
-    "python.linting.enabled": true
+    "python.linting.enabled": true,
+    "python.pythonPath": "C:\\Users\\martinv\\AppData\\Local\\Continuum\\anaconda3\\envs\\Kivy-Designer\\python.exe"
 }

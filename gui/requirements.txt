@@ -1,3 +1,4 @@
+pillow
 json_sempai
 PyYAML
 paho-mqtt
