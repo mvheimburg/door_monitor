@@ -1,0 +1,9 @@
+# pillow
+json_sempai
+PyYAML
+paho-mqtt
+rpi-backlight
+Kivy
+twisted
+pydantic
+# kivymd

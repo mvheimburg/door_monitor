@@ -1,0 +1,113 @@
+#:kivy 2.0.0
+# __author__ = 'mvheimburg'
+
+
+
+<DoorCard>:
+    orientation: "vertical"
+    MDLabel:
+        id: doorlabel
+        halign: "center"
+        text: root.name
+        user_font_size: 60
+    DoorButton:
+        id: doorbutt
+        pos_hint: {'center_x': 0.5}
+        # halign: "center"
+        on_release: app.toggle_door(root.name, self.locked)
+        user_font_size: 60
+
+
+# <DoorControlScreen>:
+#     MDBoxLayout:
+#         orientation: "vertical"
+#         md_bg_color: app.theme_cls.primary_color
+#         MDLabel:
+#             pos_hint: {'center_x': .5, 'center_y': .5}
+#             text: root.name
+#         MDBoxLayout:
+#             size_hint: None, None
+#             width: root.width
+#             height: root.height-100
+#             pos_hint: {'center_x': .5, 'center_y': .5}
+#             MDIconButton:
+#                 pos_hint: {'center_x': .5, 'center_y': .5}
+#                 icon: "arrow-left-circle"
+#                 on_release: root.arrow_prev()
+#             DoorButton:
+#                 pos_hint: {'center_x': .5, 'center_y': .5}  
+#                 id: butt
+#                 on_release: app.toggle_door(root.name, self.locked)
+#             MDIconButton:
+#                 pos_hint: {'center_x': .5, 'center_y': .5}
+#                 icon: "arrow-right-circle"
+#                 on_release: root.arrow_next()
+
+
+<Control>:
+    id: control
+    MDBoxLayout:
+        orientation: "horizontal"
+        MDFloatLayout:
+            id: garage_box
+            orientation: "vertical"
+            size_hint: None, None
+            width: root.LEFT_BOX_WIDTH
+            height: root.SCREEN_HEIGHT
+            MDIconButton:
+                action: "clear"
+                icon: "backspace-outline"
+                on_release: app.change_screen("DoorBell")  
+            MDBoxLayout:
+                orientation: "horizontal"
+                adaptive_size: True
+                pos_hint: {'center_x': .5, 'center_y': .5}
+                # width: garage_box.width
+                # height: garage_box.height
+                # pos: garage_box.pos
+
+                MDIconButton:
+                    # pos_hint: {'center_x': .5, 'center_y': .5}
+                    icon: "arrow-up-bold-circle"
+                    on_release: app.garage_open()
+                    user_font_size: 60
+                MDIconButton:
+                    # pos_hint: {'center_x': .5, 'center_y': .5}
+                    icon: "stop-circle"
+                    on_release: app.garage_stop()
+                    user_font_size: 60
+                MDIconButton:
+                    # pos_hint: {'center_x': .5, 'center_y': .5}
+                    icon: "arrow-down-bold-circle"
+                    on_release: app.garage_close()
+                    user_font_size: 60
+
+        MDBoxLayout:
+            id: door_box
+            orientation: "vertical"
+            size_hint: None, None
+            width: root.RIGHT_BOX_WIDTH
+            height: root.SCREEN_HEIGHT
+
+            DoorCard:
+                controller: control
+                id: d1
+                name: app.get_door_name("d1")
+                label: False
+                size_fac: 2
+
+            MDBoxLayout:
+                orientation: "horizontal" 
+
+                DoorCard:
+                    controller: control
+                    id: d2
+                    name: app.get_door_name("d2")
+                
+                DoorCard:
+                    controller: control
+                    id: d3
+                    name: app.get_door_name("d3")
+
+
+          

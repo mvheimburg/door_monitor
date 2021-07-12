@@ -1,0 +1,44 @@
+#:kivy 2.0.0
+# __author__ = 'mvheimburg'
+
+#: import ew kivy.uix.effectwidget
+
+
+# <CarouselWithDoubleTap>:
+    
+
+
+<DoorBell>:
+    id: doorbell
+    MDBoxLayout:
+        id: bellbox
+        MDFloatLayout:
+            size_hint: None, None
+            width: root.LEFT_BOX_WIDTH
+            height: root.SCREEN_HEIGHT
+            id: carousel_container
+
+            CarouselWithDoubleTap:
+                controller: doorbell
+
+        MDFloatLayout:
+            size_hint: None, None
+            width: root.RIGHT_BOX_WIDTH
+            height: root.SCREEN_HEIGHT
+            MDIconButton:
+                id: bellbutton
+                # icon: "account-circle"
+                icon: 'bell'
+                user_font_size: "120sp"
+                pos_hint: {'center_y': 0.5, 'center_x': 0.5}
+                # md_bg_color: app.theme_cls.primary_color
+                # md_bg_color: app.azure
+                on_press: app.ring_bell()
+
+
+
+    MDBoxLayout:
+        id: loginbox
+        # Login:
+        #     id: login
+        #     controller: doorbell
