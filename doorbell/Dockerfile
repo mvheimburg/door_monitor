@@ -1,5 +1,5 @@
-# FROM balenalib/raspberrypi3-64-python:3.9
-FROM balenalib/raspberrypi3-python:3.9
+FROM balenalib/raspberrypi3-64-python:3.9
+# FROM balenalib/raspberrypi3-python:3.9
 
 RUN install_packages \
     xserver-xorg-video-fbdev \
@@ -25,7 +25,7 @@ RUN install_packages \
 	git-core \
 	# gcc \
 	build-essential \
-	# # python-pip \
+	python-pip \
 	# gstreamer1.0-plugins-base \
 	# gstreamer1.0-plugins-good \
 	# gstreamer1.0-plugins-bad \
@@ -51,9 +51,6 @@ WORKDIR /usr/src/app
 RUN python --version
 RUN pip$PIP_VERSION install --upgrade \
     pip \
-    setuptools \
-    wheel
-
 
 # COPY prerequirements.txt ./
 # RUN pip install --no-cache-dir -r prerequirements.txt
@@ -64,6 +61,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN git clone https://github.com/kivymd/KivyMD.git --depth 1 \
     && cd KivyMD \
     && pip3 install .
+
+
+
+
+
+
+
+
 
 ##########################################################
 

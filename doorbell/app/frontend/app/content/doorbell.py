@@ -7,6 +7,7 @@ from os import path
 
 from kivy.lang import Builder
 from kivymd.uix.carousel import MDCarousel
+from kivy.uix.carousel import Carousel
 from kivy.uix.image import Image, AsyncImage
 from kivy.clock import Clock
 
@@ -39,7 +40,7 @@ image_list = [
     ,'atlas://frontend/assets/familie/familieatlas/2'
     ,'atlas://frontend/assets/familie/familieatlas/3']
 
-class CarouselWithDoubleTap(MDCarousel, TouchBehavior):
+class CarouselWithDoubleTap(Carousel, TouchBehavior):
     controller = ObjectProperty()
 
     def __init__(self, **kwargs):
@@ -48,9 +49,10 @@ class CarouselWithDoubleTap(MDCarousel, TouchBehavior):
         for im in image_list:
             print(f"adding image: {im}")
             # add=Image(source=im, nocache=True)
-            add=Image(source=im)
+            im_add=Image(source=im)
             # add.reload()
-            self.add_widget(add)
+            self.add_widget(im_add)
+            self.loop = True
         
         Clock.schedule_interval(self.next_image, 60)
 
@@ -60,9 +62,11 @@ class CarouselWithDoubleTap(MDCarousel, TouchBehavior):
         self.controller.carousel_double_tap()
     
 
-    def next_image(self, dt):
-        self.load_next()
+    # def next_image(self, dt):
+    #     self.load_next()
 
+    def next_image(self, dt):
+        self.next_slide()
 
 
 
@@ -84,11 +88,11 @@ class DoorBell(ScreenBehaviour):
             self.show_login()
 
     
-    def hide_login(self, *args):
-        # self.ids.bellbox.opacity = 1
+
+
+    def hide_login(self, *args):  
         self.opacity = 1
         print('hide_login!!')
-
         self.ids.loginbox.remove_widget(self.login_wid)
         self.login_wid.leave()
         hide_widget(self.ids.bellbutton, dohide=False)
@@ -96,7 +100,6 @@ class DoorBell(ScreenBehaviour):
 
     def show_login(self):
         print('show_login!!')
-        # self.ids.bellbox.opacity = 0.15
         self.opacity = 0.15
         # hide_widget(self.ids.loginbox, dohide=False)
         self.ids.loginbox.add_widget(self.login_wid)
