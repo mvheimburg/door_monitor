@@ -46,7 +46,7 @@ class DoorMonitorApp(MDApp):
 
     """
     connection = ObjectProperty()
-    access_level = NumericProperty(0)
+    _access_level = NumericProperty(0)
     gui = ObjectProperty()
     api_response = ObjectProperty()
 
@@ -117,6 +117,10 @@ class DoorMonitorApp(MDApp):
         else:
             return ""
 
+    @property
+    def access_level(self):
+        print(f"current access level: {self._access_level}")
+        return self._access_level
 
     def on_door_states(self, *args):
         print("on_door_states")
@@ -126,19 +130,19 @@ class DoorMonitorApp(MDApp):
         
 
 
-    def try_pin(self, pin):
-        """"
-        Log in.
+    # def try_pin(self, pin):
+    #     """"
+    #     Log in.
 
-        Log in to sw with user and password. Hardcoded for now. Should interact with DB.
+    #     Log in to sw with user and password. Hardcoded for now. Should interact with DB.
 
-        Args:
-            user:       Username
-            password:   Password
+    #     Args:
+    #         user:       Username
+    #         password:   Password
 
-        """
-        success = False
-        success = self.api.authenticate_pin(pin)
+    #     """
+    #     success = False
+    #     success = self.api.authenticate_pin(pin)
 
 
     def next_screen(self):
@@ -178,21 +182,31 @@ class DoorMonitorApp(MDApp):
                 print(e)
             else:
                 self.set_access_level(access_level)
-                if self.access_level > 0:
+
+                if self._access_level > 0:
                     self.change_screen('Control')
                     self.screens['DoorBell']["object"].login_feedback(True)
                 else:
                     print("Login failed")
                     self.screens['DoorBell']["object"].login_feedback(False)
 
-    
+
+    def log_out(self, *args):
+        self._access_level = 0
+        self.change_screen("DoorBell")
+        
+
     def set_access_level(self, level):
-        self.access_level = level
-        self.acccess_timeout = Clock.schedule_once(self.acccess_timeout, ACCESS_TIMEOUT)
+        self._access_level = level
+        print(f"access level is: {self._access_level}")
+        
+        if self._access_level > 0:
+            self.acccess_timeout = Clock.schedule_once(self.acccess_timeout, ACCESS_TIMEOUT)
 
 
     def acccess_timeout(self, dt):
-        self.access_level = 0
+        self.log_out()
+        print(f"access level timeout")
         self.acccess_timeout.cancel()
             
 

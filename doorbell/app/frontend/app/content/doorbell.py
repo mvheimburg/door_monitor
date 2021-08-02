@@ -36,15 +36,16 @@ Builder.load_file(FILE_PATH)
 
 
 image_list = [
-     'atlas://frontend/assets/familie/familieatlas/1'
-    ,'atlas://frontend/assets/familie/familieatlas/2'
-    ,'atlas://frontend/assets/familie/familieatlas/3']
+     'frontend/assets/familie/1.png'
+    ,'frontend/assets/familie/2.png'
+    ,'frontend/assets/familie/3.png']
 
-class CarouselWithDoubleTap(Carousel, TouchBehavior):
+class CarouselWithDoubleTap(MDCarousel, TouchBehavior):
     controller = ObjectProperty()
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.duration_long_touch = 1
 
         for im in image_list:
             print(f"adding image: {im}")
@@ -57,16 +58,14 @@ class CarouselWithDoubleTap(Carousel, TouchBehavior):
         Clock.schedule_interval(self.next_image, 60)
 
 
-    def on_double_tap(self, *args):
+    def on_long_touch(self, *args):
         print('doubltap')
         self.controller.carousel_double_tap()
     
 
-    # def next_image(self, dt):
-    #     self.load_next()
-
     def next_image(self, dt):
-        self.next_slide()
+        self.load_next()
+
 
 
 
@@ -77,21 +76,26 @@ class DoorBell(ScreenBehaviour):
         print('Importing DoorBell')
 
         self.login_wid = Login(controller=self)
+        self.login_visible = False
         #     controller: doorbell)
         # self.hide_login()
         
     def carousel_double_tap(self):
-        if self.app.access_level > 0:
-            print(f'access_level {self.app.access_level}')
-            self.app.change_screen('Control')
+        if self.login_visible:
+            pass
         else:
-            self.show_login()
+            if self.app.access_level > 0:
+                print(f'access_level {self.app.access_level}')
+                self.app.change_screen('Control')
+            else:
+                self.show_login()
 
     
 
 
     def hide_login(self, *args):  
-        self.opacity = 1
+        self.login_visible = False
+        self.ids.bellbox.opacity = 1
         print('hide_login!!')
         self.ids.loginbox.remove_widget(self.login_wid)
         self.login_wid.leave()
@@ -100,7 +104,8 @@ class DoorBell(ScreenBehaviour):
 
     def show_login(self):
         print('show_login!!')
-        self.opacity = 0.15
+        self.login_visible = True
+        self.ids.bellbox.opacity = 0.15
         # hide_widget(self.ids.loginbox, dohide=False)
         self.ids.loginbox.add_widget(self.login_wid)
         self.login_wid.enter()

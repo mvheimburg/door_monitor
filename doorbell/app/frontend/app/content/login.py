@@ -32,7 +32,7 @@ Builder.load_file(FILE_PATH)
 
 # class KeypadButton(MDButton):
 dist_var = 20
-opacity_fac = 500
+opacity_fac = 9
 
 
 class PinIcon(MDIcon):
@@ -110,7 +110,8 @@ class Login(ContentBase):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.controller = kwargs.pop('controller', None)
-        self.opacity = 0.01
+        # self.opacity = 0.01
+        self.opacity = 0.1
 
 
     def on_touch_down(self, touch):

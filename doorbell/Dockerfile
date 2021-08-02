@@ -25,7 +25,7 @@ RUN install_packages \
 	git-core \
 	# gcc \
 	build-essential \
-	python-pip \
+	# python-pip \
 	# gstreamer1.0-plugins-base \
 	# gstreamer1.0-plugins-good \
 	# gstreamer1.0-plugins-bad \
@@ -48,9 +48,11 @@ RUN install_packages \
 RUN mkdir -p /usr/src/app/
 WORKDIR /usr/src/app
 
-RUN python --version
+# RUN python --version
 RUN pip$PIP_VERSION install --upgrade \
     pip \
+	setuptools \
+    wheel
 
 # COPY prerequirements.txt ./
 # RUN pip install --no-cache-dir -r prerequirements.txt
