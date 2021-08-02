@@ -1,1 +1,0 @@
-from .nfcworker import NFCWorker

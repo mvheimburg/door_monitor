@@ -1,7 +1,0 @@
-pillow
-json_sempai
-PyYAML
-paho-mqtt
-rpi-backlight
-Kivy==1.11.1
-kivymd==0.104.0

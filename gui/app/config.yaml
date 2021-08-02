@@ -1,8 +1,0 @@
-setup:
-    qos: 0
-    ssl: False
-
-bell:
-    command_topic: "bell/ring/toggle"
-    # state_topic: "bell/ring/state"
-    payload_toggle: "do"
