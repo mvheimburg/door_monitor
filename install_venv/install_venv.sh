@@ -31,15 +31,15 @@ pip install --upgrade pip setuptools
 pip install -r $1/doorbell/requirements.dev.txt
 deactivate
 
-sudo mkdir $dir_path/temp
-sudo git clone https://github.com/kivymd/KivyMD.git $dir_path/temp --depth 1
+# sudo mkdir $dir_path/temp
+# sudo git clone https://github.com/kivymd/KivyMD.git $dir_path/temp --depth 1
 
-source $venv_path/bin/activate
-cd $dir_path/temp
-pip install .
-deactivate
+# source $venv_path/bin/activate
+# cd $dir_path/temp
+# pip install .
+# deactivate
 
-sudo rm -r $dir_path/temp
+# sudo rm -r $dir_path/temp
 
 
 echo 'export FRONTEND_PREREQ=1' >> ~/.bashrc 

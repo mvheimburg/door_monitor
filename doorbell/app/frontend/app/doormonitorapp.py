@@ -2,9 +2,10 @@ from __future__ import unicode_literals
 
 from os import path
 from kivy.properties import StringProperty, NumericProperty, ObjectProperty, DictProperty
-from kivy.uix.screenmanager import ScreenManager
+from kivy.uix.screenmanager import ScreenManager, NoTransition
 from kivymd.uix.screen import MDScreen
 from kivy.utils import get_color_from_hex
+
 
 from kivymd.app import MDApp
 from kivymd.theming import ThemeManager
@@ -20,9 +21,11 @@ from time import sleep
 import paho.mqtt.client as mqtt
 import urllib.parse
 
+from kivy.properties import BoundedNumericProperty
+
 from models import MQTTConfig, DoorsConfig
 from models.memory import DoorState, GarageState
-
+from kelvin import kelvin_rgb_to_kivy
 
 from const import(
      ACCESS_TIMEOUT
@@ -31,6 +34,7 @@ from const import(
     ,BELL_COMMAND_PAYLOAD
     ,GARAGE_COMMAND_PAYLOAD
     ,GARAGE_STATUS_PAYLOAD
+    ,MODE_COMMAND_PAYLOAD
 )
 
 from frontend.app import config
@@ -50,17 +54,16 @@ class DoorMonitorApp(MDApp):
     gui = ObjectProperty()
     api_response = ObjectProperty()
 
-
-    
-    # control_memory: ObjectProperty(None)
-    mqtt_config: MQTTConfig
-    doors_config: DoorsConfig
+    timer_cnt = BoundedNumericProperty(5, min=0, max=ACCESS_TIMEOUT)
+    timer = None
     _mqttc = mqtt.Client
 
-    def __init__(self, mqtt_config, doors_config, bell_config, garage_config, api_config):
+    def __init__(self, mqtt_config, doors_config, bell_config, garage_config, api_config, mode_config):
         super().__init__()
 
+        self.kelvin = kelvin_rgb_to_kivy()
         self.azure = get_color_from_hex('#f0ffff')
+
         self.theme_cls = ThemeManager()
         self.theme_cls.primary_palette = "Blue"
         self.theme_cls.primary_hue = "500"
@@ -73,11 +76,12 @@ class DoorMonitorApp(MDApp):
         self.doors_config = doors_config
         self.bell_config = bell_config
         self.garage_config = garage_config
+        self.mode_config = mode_config
 
 
         
         ## GUI ##
-        self.gui = ScreenManager()
+        self.gui = ScreenManager(transition=NoTransition())
         try:
             self.screens= config.screens
         except AttributeError:
@@ -194,20 +198,43 @@ class DoorMonitorApp(MDApp):
     def log_out(self, *args):
         self._access_level = 0
         self.change_screen("DoorBell")
-        
+        print(f"Log out, access level is: {self._access_level}")
 
     def set_access_level(self, level):
         self._access_level = level
         print(f"access level is: {self._access_level}")
         
+
+    def start_log_out_timer(self):
         if self._access_level > 0:
-            self.acccess_timeout = Clock.schedule_once(self.acccess_timeout, ACCESS_TIMEOUT)
+            print(f"access timeout set")
+            # self.acccess_timeout = Clock.schedule_once(self.acccess_timeout, ACCESS_TIMEOUT)
+            self.timer_cnt = ACCESS_TIMEOUT
+            self.timer = Clock.schedule_interval(self.tic, 1)
+    
+
+    def cancel_log_out_timer(self):
+        self.timer.cancel()
 
 
-    def acccess_timeout(self, dt):
-        self.log_out()
-        print(f"access level timeout")
-        self.acccess_timeout.cancel()
+    def tic(self, dt):
+        self.timer_cnt -= 1
+
+
+    def on_timer_cnt(self, *args):
+        if self.timer_cnt == 0:
+            self.cancel_log_out_timer()
+            self.log_out()
+
+
+    def extend_log_out_timer(self):
+        self.timer_cnt = ACCESS_TIMEOUT
+
+
+    # def acccess_timeout(self, dt):
+    #     self.log_out()
+    #     print(f"access level timeout")
+    #     self.acccess_timeout.cancel()
             
 
 
@@ -253,7 +280,10 @@ class DoorMonitorApp(MDApp):
             elif payload == DOORLOCK_STATUS_PAYLOAD.UNLOCKED:
                 door.state="UNLOCKED"
                 self.screens['Control']["object"].update_door_states(door.door_id, False)
-                    
+         
+        elif topic == self.mode_config.command_topic:
+            print(f"mode received: {payload}")
+            self.mode_config.state = payload
 
 
     def mqtt_on_publish(self, mqttc, obj, mid):
@@ -279,13 +309,20 @@ class DoorMonitorApp(MDApp):
     def mqttc_subscribe(self):
         for door in self.doors_config.doors:
             self._mqttc.subscribe(door.state_topic, qos=0)
+        self._mqttc.subscribe(self.mode_config.command_topic, qos=0)
 
     def mqttc_run(self):     
         self._mqttc.loop_start()
 
     def ring_bell(self):
         print('ringing that bell')
+        print(f'self.mode_config.state: {self.mode_config.state}')
         self._mqttc.publish(self.bell_config.command_topic, payload=BELL_COMMAND_PAYLOAD.DO)
+        if self.mode_config.state == MODE_COMMAND_PAYLOAD.NORMAL:
+            pass
+        elif self.mode_config.state == MODE_COMMAND_PAYLOAD.HALLOWEEN:
+           self.change_screen('Scary')
+
 
 
     def toggle_door(self, door, locked, *args):

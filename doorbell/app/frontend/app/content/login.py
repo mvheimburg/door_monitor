@@ -11,6 +11,8 @@ from kivymd.uix.label import MDLabel, MDIcon
 from kivymd.uix.button import MDRaisedButton, MDIconButton
 from kivymd.uix.gridlayout import MDGridLayout
 from kivymd.uix.floatlayout import MDFloatLayout
+from kivymd.uix.boxlayout import MDBoxLayout
+
 from kivy.properties import VariableListProperty, ObjectProperty, BoundedNumericProperty, ListProperty, StringProperty, NumericProperty
 from kivymd.toast import toast
 from kivy.clock import Clock
@@ -156,6 +158,7 @@ class Login(ContentBase):
 
     def on_timeout_object(self, *args):
         if self.timeout_object == 0:
+            self.app.start_log_out_timer()
             self.controller.hide_login()
 
 

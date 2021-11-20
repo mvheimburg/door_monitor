@@ -10,6 +10,11 @@
             "access_level": 0,
             "object": 0,
             "import": "from frontend.app.content.control import Control"
+        },
+        "Scary": {
+            "access_level": 0,
+            "object": 0,
+            "import": "from frontend.app.content.halloween.scary import Scary"
         }
     }
 

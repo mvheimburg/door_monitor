@@ -26,3 +26,9 @@ garage:
     command_topic: "garage/gate/cmd"
     state_topic: "garage/gate/state"
     state: "Unknown"
+
+
+mode:
+    command_topic: "bell/mode/cmd"
+    state_topic: "bell/mode/state"
+    state: "Unknown"

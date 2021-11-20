@@ -1,6 +1,6 @@
 from pydantic import BaseModel
-from typing import Optional, List
-
+from typing import Callable, Optional, List
+from kivy.clock import Clock
 
 from const import(
      DOORLOCK_COMMAND_PAYLOAD
@@ -21,8 +21,8 @@ class APIConfig(BaseModel):
 
 
 
-class BellConfig(BaseModel):
-    command_topic: str
+# class BellConfig(BaseModel):
+#     command_topic: str
 
 
 
@@ -65,7 +65,28 @@ class DoorsConfig(BaseModel):
 
 
 
-class GarageConfig(BaseModel):
-    command_topic: str
-    state_topic: str
-    state: str = "Unkknown"
+# class GarageConfig(BaseModel):
+#     command_topic: str
+#     state_topic: str
+#     state: str = "Unkknown"
+
+class MqttStringConfig(BaseModel):
+    command_topic: Optional[str]
+    state_topic: Optional[str]
+    state: Optional[str]
+
+
+# class Timer(BaseModel):
+#     max_val:int
+#     count:int
+#     timer:Callable=None
+
+#     def __init__(self, max_val):
+#         self.count = max_val
+        
+
+#     def start_countdown(self):
+#         self.timer = Clock.schedule_interval(self.tic, 1)
+
+#     def tic(self, dt):
+#         self.count -= 1

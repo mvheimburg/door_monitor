@@ -5,4 +5,4 @@ paho-mqtt
 Kivy
 twisted
 pydantic
-# kivymd
+kivymd

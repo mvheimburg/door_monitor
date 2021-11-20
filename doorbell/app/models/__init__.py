@@ -1,1 +1,1 @@
-from .models import MQTTConfig, APIConfig, BellConfig, Door, DoorsConfig, GarageConfig
+from .models import MQTTConfig, APIConfig,  Door, DoorsConfig, MqttStringConfig

@@ -17,7 +17,7 @@ def main(mode=0):
     
     """
     
-    from models import MQTTConfig, BellConfig, APIConfig, Door, DoorsConfig, GarageConfig
+    from models import MQTTConfig, APIConfig, Door, DoorsConfig, MqttStringConfig
     from frontend.app import DoorMonitorApp
     from definitions import ROOT_DIR
 
@@ -51,7 +51,7 @@ def main(mode=0):
     print(cfg)
 
 
-    bell_config = BellConfig(command_topic=cfg['bell']['command_topic'])
+    bell_config = MqttStringConfig(**cfg['bell'])
     mqtt_config = MQTTConfig(broker=broker, port=port, username=username, password=password, client_id=client_id)
 
     door_list = []
@@ -65,14 +65,14 @@ def main(mode=0):
 
     print(cfg['garage'])
 
-    garage_config=GarageConfig(command_topic=cfg['garage']['command_topic'], state_topic=cfg['garage']['state_topic'])
+    garage_config=MqttStringConfig(**cfg['garage'])
 
     api_config=APIConfig(url=api_url)  
 
+    mode_config = MqttStringConfig(**cfg['mode'])
 
 
-
-    app = DoorMonitorApp(mqtt_config, doors_config, bell_config, garage_config, api_config)
+    app = DoorMonitorApp(mqtt_config, doors_config, bell_config, garage_config, api_config, mode_config)
     app.run()
 
 

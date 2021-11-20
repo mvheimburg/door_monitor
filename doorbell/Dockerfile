@@ -60,9 +60,9 @@ RUN pip$PIP_VERSION install --upgrade \
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN git clone https://github.com/kivymd/KivyMD.git --depth 1 \
-    && cd KivyMD \
-    && pip3 install .
+# RUN git clone https://github.com/kivymd/KivyMD.git --depth 1 \
+#     && cd KivyMD \
+#     && pip3 install .
 
 
 

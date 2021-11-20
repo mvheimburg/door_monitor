@@ -1,5 +1,9 @@
+from enum import Enum
 
-
+class MODE_COMMAND_PAYLOAD():
+    NORMAL="normal"
+    HALLOWEEN="halloween"
+    CHRISTMAS="christmas"
 
 class BELL_COMMAND_PAYLOAD():
     DO="do"

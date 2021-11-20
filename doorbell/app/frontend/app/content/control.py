@@ -158,6 +158,7 @@ class Control(ScreenBehaviour):
 
     def on_timer_object(self, *args):
         if self.timer_object == 0:
+            self.app.start_log_out_timer()
             self.app.change_screen("DoorBell")
 
 

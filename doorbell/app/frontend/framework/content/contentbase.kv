@@ -2,17 +2,17 @@
 # __author__ = 'sintefocean'
 
 <ContentBase>:
-    orientation: 'horizontal'
     # canvas.before:
     #     Color:
-    #         rgba: 1, 0, 0, 1
+    #         rgba: app.theme_cls.bg_light
+    #         # rgba: 0,0,0,1
     #     Rectangle:
     #         pos: self.pos
     #         size: self.size
     canvas.before:
         Color:
-            rgba: app.theme_cls.bg_light
-            # rgba: 0,0,0,1
+            rgba: app.kelvin(3000)
         Rectangle:
             pos: self.pos
             size: self.size
+

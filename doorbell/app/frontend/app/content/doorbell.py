@@ -117,3 +117,12 @@ class DoorBell(ScreenBehaviour):
             self.hide_login()
         else:
             self.login_wid.login_failed()
+
+
+    def on_touch_down(self, touch):
+        
+        # if self.collide_point(touch):
+        if self.collide_point(touch.x, touch.y):
+            print("reset login timer")
+            self.app.extend_log_out_timer()
+        return super().on_touch_down(touch)
