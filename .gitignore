@@ -1,4 +1,3 @@
 **/sosecret.yaml
 .venv
-.balena/
 .frontend_venv/

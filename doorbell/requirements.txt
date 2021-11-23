@@ -8,3 +8,6 @@ pydantic_yaml[ruamel]
 python-box[ruamel.yaml]
 mypy
 kivymd
+# gattlib
+# PyBluez
+# beacontools[scan]

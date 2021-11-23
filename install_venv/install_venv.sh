@@ -41,8 +41,4 @@ deactivate
 
 # sudo rm -r $dir_path/temp
 
-
-echo 'export FRONTEND_PREREQ=1' >> ~/.bashrc 
-source ~/.bashrc 
-
 exit 0

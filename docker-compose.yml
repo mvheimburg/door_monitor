@@ -1,12 +1,34 @@
 version: '2.1'
 services:
+  
   doorbell:
     build: 
       context: doorbell
       dockerfile: Dockerfile
     privileged: true
+    labels:
+      io.balena.features.dbus: 1 
     restart: always
     network_mode: host
+    devices:
+      - /dev/dri
+    group_add:
+      - video
+    volumes:
+      - x11:/tmp/.X11-unix
+    depends_on:
+      - xserver
+
+  xserver:
+    image: balenablocks/xserver
+    restart: always
+    privileged: true
+    volumes:
+      - x11:/tmp/.X11-unix
+
+volumes:
+  x11:
+
   # presence:
   #   build: ./presence
   #   cap_add:
