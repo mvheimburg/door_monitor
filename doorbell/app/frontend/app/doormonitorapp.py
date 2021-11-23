@@ -5,7 +5,7 @@ from kivy.properties import StringProperty, NumericProperty, ObjectProperty, Dic
 from kivy.uix.screenmanager import ScreenManager, NoTransition
 from kivymd.uix.screen import MDScreen
 from kivy.utils import get_color_from_hex
-# from rpi_backlight import Backlight
+from rpi_backlight import Backlight
 
 from kivymd.app import MDApp
 from kivymd.theming import ThemeManager
@@ -40,9 +40,9 @@ from const import(
 from frontend.app import config
 # from service.ble import ScanHandler
 
-LOAD_FILE = 'doormonitor.kv'
-FILE_PATH = path.abspath(path.join(path.dirname(__file__), LOAD_FILE))
-Builder.load_file(FILE_PATH)
+# LOAD_FILE = 'doormonitor.kv'
+# FILE_PATH = path.abspath(path.join(path.dirname(__file__), LOAD_FILE))
+# Builder.load_file(FILE_PATH)
 
 
 class DoorMonitorApp(MDApp):
@@ -79,7 +79,7 @@ class DoorMonitorApp(MDApp):
         self.garage_config = garage_config
         self.mode_config = mode_config
         
-        # self.backlight = Backlight()
+        self.backlight = Backlight()
         # self.scan_handler = ScanHandler()
 
         
