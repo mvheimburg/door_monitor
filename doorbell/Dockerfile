@@ -7,7 +7,7 @@ FROM balenalib/raspberrypi3-64-python:${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_M
 ARG PYTHON_VERSION_MAJOR
 ARG PYTHON_VERSION_MINOR
 ARG PIP_VERSION
-ARG PYTHON_VERSION=$PYTHON_VERSION_MAJOR.$PYTHON_VERSION_MINOR
+ARG PYTHON_VERSION=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
 RUN apt update
 
@@ -29,10 +29,20 @@ RUN install_packages \
 	# # python3-rpi.gpio \
 	libjpeg-dev \
 	libpng-dev 
+	# libbluetooth-dev \
+	# libcap2-bin \
+	# bluez \
+	# bluez-tools \
+	# libboost-python-dev \
+	# libboost-thread-dev \
+	# libbluetooth-dev \
+	# libglib2.0-dev
+
+	# py${PYTHON_VERSION_MAJOR}-dbus
 
 
 # RUN echo 'SUBSYSTEM=="backlight",RUN+="/bin/chmod 666 /sys/class/backlight/%k/brightness /sys/class/backlight/%k/bl_power"' | sudo tee -a /etc/udev/rules.d/backlight-permissions.rules
-
+# RUN setcap 'cap_net_raw,cap_net_admin+eip' "$(readlink -f "$(which python)")"
 
 RUN mkdir -p /usr/src/app/
 WORKDIR /usr/src/app

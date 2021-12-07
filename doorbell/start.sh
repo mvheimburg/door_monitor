@@ -7,4 +7,6 @@ do
 	sleep 0.5
 done
 
-python /usr/src/app/main.py
+# python /usr/src/app/main.py
+cd /usr/src/app
+python -m uvicorn main:app --host 0.0.0.0 --port 5555

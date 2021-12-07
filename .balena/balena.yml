@@ -1,4 +1,3 @@
-
 build-variables:
   global:
     - PYTHON_VERSION_MAJOR=3

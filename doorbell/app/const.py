@@ -1,4 +1,5 @@
 from enum import Enum
+from os import  environ
 
 class MODE_COMMAND_PAYLOAD():
     NORMAL="normal"
@@ -40,3 +41,13 @@ SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 480
 LEFT_BOX_WIDTH = SCREEN_HEIGHT
 RIGHT_BOX_WIDTH = SCREEN_WIDTH - LEFT_BOX_WIDTH
+
+RSSI_THRESHOLD = -75
+
+
+MQTT_BROKER     =environ.get('MQTT_BROKER')
+MQTT_PORT       =int(environ.get('MQTT_PORT'))
+MQTT_USERNAME   =environ.get('MQTT_USERNAME')
+MQTT_PASSWORD   =environ.get('MQTT_PASSWORD')
+MQTT_CLIENT_ID  =environ.get('MQTT_CLIENT_ID')
+LOCKMASTER_URL  =environ.get('LOCKMASTER_URL')

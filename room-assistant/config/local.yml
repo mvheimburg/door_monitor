@@ -1,0 +1,12 @@
+global:
+  instanceName: main-door
+  integrations:
+    - bluetoothLowEnergy
+    - homeAssistant
+bluetoothLowEnergy:
+  onlyIBeacon: true
+homeAssistant:
+  mqttUrl: mqtt://192.168.1.2:1883
+  mqttOptions:
+    username: doormonitorpresence
+    password: doormonitorpresence!

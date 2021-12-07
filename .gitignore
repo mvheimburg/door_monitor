@@ -1,3 +1,4 @@
 **/sosecret.yaml
 .venv
 .frontend_venv/
+.balena/secrets/secrets.yaml

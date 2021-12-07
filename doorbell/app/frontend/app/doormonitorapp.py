@@ -20,6 +20,7 @@ from time import sleep
 
 import paho.mqtt.client as mqtt
 import urllib.parse
+import websockets
 
 from kivy.properties import BoundedNumericProperty
 
@@ -35,10 +36,16 @@ from const import(
     ,GARAGE_COMMAND_PAYLOAD
     ,GARAGE_STATUS_PAYLOAD
     ,MODE_COMMAND_PAYLOAD
+    ,MQTT_BROKER
+    ,MQTT_CLIENT_ID
+    ,MQTT_PASSWORD
+    ,MQTT_PORT
+    ,MQTT_USERNAME
+    
 )
 
 from frontend.app import config
-# from service.ble import ScanHandler
+from frontend.app.api import try_login, detected_beacon
 
 # LOAD_FILE = 'doormonitor.kv'
 # FILE_PATH = path.abspath(path.join(path.dirname(__file__), LOAD_FILE))
@@ -51,7 +58,7 @@ class DoorMonitorApp(MDApp):
 
     """
     connection = ObjectProperty()
-    _access_level = NumericProperty(0)
+    access_level = NumericProperty(0)
     gui = ObjectProperty()
     api_response = ObjectProperty()
 
@@ -59,7 +66,7 @@ class DoorMonitorApp(MDApp):
     timer = None
     _mqttc = mqtt.Client
 
-    def __init__(self, mqtt_config, doors_config, bell_config, garage_config, api_config, mode_config):
+    def __init__(self, doors_config, bell_config, garage_config, mode_config):
         super().__init__()
 
         self.kelvin = kelvin_rgb_to_kivy()
@@ -72,15 +79,12 @@ class DoorMonitorApp(MDApp):
         self.theme_cls.accent_palette_hue = "500"
         self.theme_cls.theme_style = "Light"
 
-        self.api_config = api_config
-        self.mqtt_config = mqtt_config
         self.doors_config = doors_config
         self.bell_config = bell_config
         self.garage_config = garage_config
         self.mode_config = mode_config
         
         self.backlight = Backlight()
-        # self.scan_handler = ScanHandler()
 
         
         ## GUI ##
@@ -115,6 +119,31 @@ class DoorMonitorApp(MDApp):
 
         self.change_screen(self.gui.screen_names[0])
 
+    def user_out_of_bounds(self, uuid):
+        print(f"USER OUT OF BOUNDS {uuid}")
+
+    # def detected_beacon_response(self, request, result):
+    #     if result is not None:
+    #         try:
+    #             self.access_level = result
+    #             if self.access_level > 0:
+    #                 self.change_screen('Control')
+    #                 self.screens['DoorBell']["object"].login_feedback(True)
+    #             else:
+    #                 print("Login failed")
+    #                 self.screens['DoorBell']["object"].login_feedback(False)
+    #         except ValueError as e:
+    #             print(f"result: {result}")
+    #             print(e)
+    #     else:
+    #         print(f"result: {result}")
+
+    # # def detected_beacon(self, devices_discovered, address, packet_type):
+    # #         print(f'found: {devices_discovered} with address {address} aand packet type {packet_type}')
+
+    # def detected_beacon(self, uuid, rssi):
+    #     print(f'found uuid: {uuid} with rssi {rssi}')
+    #     detected_beacon(on_success=self.detected_beacon_response,uuid=uuid, rssi=rssi)
 
     def get_door_name(self, door_id, *args):
         print(door_id)
@@ -124,10 +153,10 @@ class DoorMonitorApp(MDApp):
         else:
             return ""
 
-    @property
-    def access_level(self):
-        print(f"current access level: {self._access_level}")
-        return self._access_level
+    # @property
+    # def access_level(self):
+    #     print(f"current access level: {self.access_level}")
+    #     return self.access_level
 
     def on_door_states(self, *args):
         print("on_door_states")
@@ -177,39 +206,29 @@ class DoorMonitorApp(MDApp):
 
 
 
-    def try_login_response(self, *args):
-        
-        if self.api_response:
-            # for key, value in self.api_response.resp_headers.items():
-            #     print('{}: {}'.format(key, value))
-            print(self.api_response.result)
-            try:
-                access_level = int(self.api_response.result)
-            except Exception as e:
-                print(e)
-            else:
-                self.set_access_level(access_level)
+    def try_login_response(self, request, result):
+        self.access_level = result
+        if self.access_level > 0:
+            self.change_screen('Control')
+            self.screens['DoorBell']["object"].login_feedback(True)
+        else:
+            print("Login failed")
+            self.screens['DoorBell']["object"].login_feedback(False)
 
-                if self._access_level > 0:
-                    self.change_screen('Control')
-                    self.screens['DoorBell']["object"].login_feedback(True)
-                else:
-                    print("Login failed")
-                    self.screens['DoorBell']["object"].login_feedback(False)
 
 
     def log_out(self, *args):
-        self._access_level = 0
+        self.access_level = 0
         self.change_screen("DoorBell")
-        print(f"Log out, access level is: {self._access_level}")
+        print(f"Log out, access level is: {self.access_level}")
 
-    def set_access_level(self, level):
-        self._access_level = level
-        print(f"access level is: {self._access_level}")
+    # def setaccess_level(self, level):
+    #     self.access_level = level
+    #     print(f"access level is: {self.access_level}")
         
 
     def start_log_out_timer(self):
-        if self._access_level > 0:
+        if self.access_level > 0:
             print(f"access timeout set")
             # self.acccess_timeout = Clock.schedule_once(self.acccess_timeout, ACCESS_TIMEOUT)
             self.timer_cnt = ACCESS_TIMEOUT
@@ -242,18 +261,16 @@ class DoorMonitorApp(MDApp):
 
 
     def try_login(self, pin, *args):
-        req = f"{self.api_config.url}/get_access_level_by_pin/{pin}"
-        print(f"making request: {req}")
-        self.api_response = UrlRequest(req, on_success=self.try_login_response)
-        # self.change_screen('Control')
+        try_login(pin=pin, on_success=self.try_login_response)
+
 
 
 
     #### MQTT STUFF ####
     def make_client(self):
         # parameters = {'self': self}
-        self._mqttc = mqtt.Client(self.mqtt_config.client_id)
-        # self._mqttc = mqtt.Client(self.mqtt_config.client_id, userdata = parameters)
+        self._mqttc = mqtt.Client(MQTT_CLIENT_ID)
+        # self._mqttc = mqtt.Client(MQTT_CLIENT_ID, userdata = parameters)
         self._mqttc.on_message = self.mqtt_on_message
         self._mqttc.on_connect = self.mqtt_on_connect
         self._mqttc.on_publish = self.mqtt_on_publish
@@ -303,10 +320,10 @@ class DoorMonitorApp(MDApp):
         pass
 
     def mqttc_connect_to_broker(self):
-        print(f"connecting to broker {self.mqtt_config.broker} as {self.mqtt_config.client_id}")
-        # broker_parsed = urllib.parse.urlparse(self.mqtt_config.broker)
-        self._mqttc.username_pw_set(self.mqtt_config.username, password=self.mqtt_config.password)
-        self._mqttc.connect(self.mqtt_config.broker, port=self.mqtt_config.port, keepalive=60)
+        print(f"connecting to broker {MQTT_BROKER} as {MQTT_CLIENT_ID}")
+        # broker_parsed = urllib.parse.urlparse(MQTT_BROKER)
+        self._mqttc.username_pw_set(MQTT_USERNAME, password=MQTT_PASSWORD)
+        self._mqttc.connect(MQTT_BROKER, port=MQTT_PORT, keepalive=60)
 
 
     def mqttc_subscribe(self):

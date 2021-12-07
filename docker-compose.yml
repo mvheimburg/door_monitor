@@ -1,6 +1,36 @@
 version: '2.1'
 services:
-  
+
+  room-assistant:
+    image: mkerix/room-assistant
+    network_mode: host
+    restart: always
+    labels:
+      io.balena.features.dbus: 1 
+    # volumes:
+    #   - /var/run/dbus:/var/run/dbus
+    environment:
+      NODE_CONFIG: >
+        {
+          "global": {
+            "instanceName": "main-door",
+            "integrations": ["homeAssistant", "bluetoothLowEnergy"]
+          },
+          "bluetoothLowEnergy": {
+            "onlyIBeacon": true,
+            "denylist": [1,2,3]
+          },
+          "homeAssistant": {
+            "mqttUrl": "mqtt://192.168.1.2:1883",
+            "mqttOptions": {
+              "username": "doormonitorpresence",
+              "password": "doormonitorpresence!"
+            }
+          }
+        }
+    ports:
+      - 6415:6415  
+
   doorbell:
     build: 
       context: doorbell
@@ -18,6 +48,10 @@ services:
       - x11:/tmp/.X11-unix
     depends_on:
       - xserver
+    ports:
+      - 5555:5555
+    # cap_add:
+    #   - NET_ADMIN
 
   xserver:
     image: balenablocks/xserver
