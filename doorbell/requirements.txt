@@ -15,4 +15,10 @@ kivymd
 # pygatt[GATTTOOL]
 # beacontools[scan]
 uvicorn
+hypercorn
 fastapi
+dependency-injector
+trio
+anyio[trio]
+# asyncio
+# anyio[asyncio]

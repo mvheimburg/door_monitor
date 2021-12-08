@@ -39,7 +39,7 @@ services:
     labels:
       io.balena.features.dbus: 1 
     restart: always
-    network_mode: host
+    # network_mode: host
     devices:
       - /dev/dri
     group_add:
@@ -49,7 +49,9 @@ services:
     depends_on:
       - xserver
     ports:
-      - 5555:5555
+      - 8000:8000/tcp
+      - 80:80/tcp
+      # - 443:443/tcp
     # cap_add:
     #   - NET_ADMIN
 

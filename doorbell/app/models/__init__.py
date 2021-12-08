@@ -1,1 +1,1 @@
-from .models import MQTTConfig, APIConfig,  Door, DoorsConfig, MqttStringConfig
+from .models import MQTTConfig, APIConfig,  Door, DoorsConfig, MqttStringConfig, AccessModel

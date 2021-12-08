@@ -23,7 +23,9 @@ class APIConfig(BaseModel):
 
 # class BellConfig(BaseModel):
 #     command_topic: str
-
+class AccessModel(BaseModel):
+    name:Optional[str]
+    access_level: int
 
 
 class Door(BaseModel):

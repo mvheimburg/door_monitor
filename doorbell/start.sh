@@ -9,4 +9,5 @@ done
 
 # python /usr/src/app/main.py
 cd /usr/src/app
-python -m uvicorn main:app --host 0.0.0.0 --port 5555
+# python -m uvicorn main:app --host 0.0.0.0 --port 80
+python -m main

@@ -10,6 +10,7 @@ from rpi_backlight import Backlight
 from kivymd.app import MDApp
 from kivymd.theming import ThemeManager
 from kivy.network.urlrequest import UrlRequest
+from kivymd.toast import toast
 import urllib
 from jsonsempai import magic
 
@@ -20,11 +21,11 @@ from time import sleep
 
 import paho.mqtt.client as mqtt
 import urllib.parse
-import websockets
+# import websockets
 
 from kivy.properties import BoundedNumericProperty
 
-from models import MQTTConfig, DoorsConfig
+from models import MQTTConfig, DoorsConfig, AccessModel
 from models.memory import DoorState, GarageState
 from kelvin import kelvin_rgb_to_kivy
 
@@ -52,13 +53,17 @@ from frontend.app.api import try_login, detected_beacon
 # Builder.load_file(FILE_PATH)
 
 
+from models import MQTTConfig, APIConfig, Door, DoorsConfig, MqttStringConfig, AccessModel
+
 class DoorMonitorApp(MDApp):
     """
     Frontend for CatchScanner configuration
 
     """
     connection = ObjectProperty()
+    current_user = StringProperty()
     access_level = NumericProperty(0)
+    access = ObjectProperty(None)
     gui = ObjectProperty()
     api_response = ObjectProperty()
 
@@ -66,8 +71,26 @@ class DoorMonitorApp(MDApp):
     timer = None
     _mqttc = mqtt.Client
 
-    def __init__(self, doors_config, bell_config, garage_config, mode_config):
+    def __init__(self, cfg: dict) -> None:
         super().__init__()
+
+
+        bell_config = MqttStringConfig(**cfg['bell'])
+
+        door_list = []
+        for door, d_cfg in  cfg['doors'].items():
+            print(f"new_door: {door}")
+            new_door = Door(door_id=door, name=d_cfg['name'], command_topic=d_cfg['command_topic'], state_topic=d_cfg['state_topic'])
+            # new_door.set_relay()
+            door_list.append(new_door)
+            
+        doors_config = DoorsConfig(doors=door_list)
+
+        print(cfg['garage'])
+
+        garage_config=MqttStringConfig(**cfg['garage'])
+
+        mode_config = MqttStringConfig(**cfg['mode'])
 
         self.kelvin = kelvin_rgb_to_kivy()
         self.azure = get_color_from_hex('#f0ffff')
@@ -119,9 +142,20 @@ class DoorMonitorApp(MDApp):
 
         self.change_screen(self.gui.screen_names[0])
 
-    def user_out_of_bounds(self, uuid):
-        print(f"USER OUT OF BOUNDS {uuid}")
 
+    def presence_out_of_bounds(self, am:AccessModel):
+        print(f"USER OUT OF BOUNDS {am}")
+    
+
+    def presence_detected(self, am:AccessModel):
+        print(f"presence_detected {am}")
+        if am.name:
+            self.current_user = am.name
+            toast(f"Velkommen {am.name}")
+        if am.access_level>0:
+            self.access_level = am.access_level
+            self.change_screen('Control')
+            self.screens['DoorBell']["object"].login_feedback(True)
     # def detected_beacon_response(self, request, result):
     #     if result is not None:
     #         try:
@@ -208,7 +242,7 @@ class DoorMonitorApp(MDApp):
 
     def try_login_response(self, request, result):
         self.access_level = result
-        if self.access_level > 0:
+        if result > 0:
             self.change_screen('Control')
             self.screens['DoorBell']["object"].login_feedback(True)
         else:
