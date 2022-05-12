@@ -1,41 +1,40 @@
-from __future__ import unicode_literals
+# from __future__ import unicode_literals
 
-from os import path
+# from os import path
 from kivy.properties import StringProperty, NumericProperty, ObjectProperty, DictProperty
 from kivy.uix.screenmanager import ScreenManager, NoTransition
-from kivymd.uix.screen import MDScreen
+# from kivymd.uix.screen import MDScreen
 from kivy.utils import get_color_from_hex
 from rpi_backlight import Backlight
 
 from kivymd.app import MDApp
 from kivymd.theming import ThemeManager
-from kivy.network.urlrequest import UrlRequest
+# from kivy.network.urlrequest import UrlRequest
 from kivymd.toast import toast
-import urllib
+# import urllib
 from jsonsempai import magic
+from typing import Dict
 
-from kivy.lang import Builder
-from kivy.clock import Clock
+# from kivy.lang import Builder
+# from kivy.clock import Clock
 
-from time import sleep
+# from time import sleep
 
 import paho.mqtt.client as mqtt
-import urllib.parse
+# import urllib.parse
 # import websockets
 
-from kivy.properties import BoundedNumericProperty
+# from kivy.properties import BoundedNumericProperty
 
 from models import MQTTConfig, DoorsConfig, AccessModel
-from models.memory import DoorState, GarageState
+# from models.memory import DoorState, GarageState
 from kelvin import kelvin_rgb_to_kivy
 
 from const import(
-     ACCESS_TIMEOUT
-    ,DOORLOCK_COMMAND_PAYLOAD
-    ,DOORLOCK_STATUS_PAYLOAD
+     SCREEN_TIMER
+    ,LOGOUT_TIMER
     ,BELL_COMMAND_PAYLOAD
     ,GARAGE_COMMAND_PAYLOAD
-    ,GARAGE_STATUS_PAYLOAD
     ,MODE_COMMAND_PAYLOAD
     ,MQTT_BROKER
     ,MQTT_CLIENT_ID
@@ -45,8 +44,18 @@ from const import(
     
 )
 
+# from kivy.support import install_twisted_reactor
+
+# install_twisted_reactor()
+
+# from twisted.web import server, resource
+# from twisted.internet import reactor, endpoints
+# from twisted.internet import defer
+# from twisted.web import xmlrpc
+# # xmlrpc.XMLRPC(allowNone=True)
+
 from frontend.app import config
-from frontend.app.api import try_login, detected_beacon
+from frontend.app.api import try_login, detected_beacon, lock_door, unlock_door
 
 # LOAD_FILE = 'doormonitor.kv'
 # FILE_PATH = path.abspath(path.join(path.dirname(__file__), LOAD_FILE))
@@ -54,43 +63,97 @@ from frontend.app.api import try_login, detected_beacon
 
 
 from models import MQTTConfig, APIConfig, Door, DoorsConfig, MqttStringConfig, AccessModel
+from const import LoginState
+from frontend.utils import Timer
+# from const import NoneType
+
+
+
+
+from kivy.support import install_twisted_reactor
+
+install_twisted_reactor()
+
+from twisted.web import server, resource
+from twisted.internet import reactor, endpoints
+from twisted.internet import defer
+from twisted.web import xmlrpc
+class WebServerResource(xmlrpc.XMLRPC):
+
+    def __init__(self, app):
+        self.allowNone = True
+        super().__init__()
+        self.app = app
+
+    # def xmlrpc_echo(self, *args):
+    #     print(args)
+    #     return args
+
+    # def xmlrpc_echo2(self, x):
+    #     print(x)
+    #     return x
+
+    # def xmlrpc_presence_out_of_bounds(self, am:dict):
+    #     am=AccessModel(**am)
+    #     self.app.presence_out_of_bounds(am)
+    #     return True
+
+    def xmlrpc_presence_detected(self, am:Dict):
+        # am=AccessModel(**am, login_state = LoginState.PRESENCE_IN)
+        self.app.presence_detected(am)
+        return True
+
+# from fastapi import Depends, FastAPI, Body
+# import uvicorn
+
+# def create_app(frontend) -> FastAPI:
+#     print("Starting FastAPI!")
+
+#     app = FastAPI()
+
+
+#     @app.get("/test/")
+#     async def test():
+#         return "test"
+
+#     @app.put("/presence_detected/")
+#     async def presence_detected(am:Dict=Body(...)):
+#         # global frontend
+#         # am=AccessModel(**am, login_state = LoginState.PRESENCE_IN)
+#         print(am)
+#         frontend.presence_detected(am)
+#         return True
+
+#     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+
 
 class DoorMonitorApp(MDApp):
     """
     Frontend for CatchScanner configuration
 
     """
-    connection = ObjectProperty()
-    current_user = StringProperty()
-    access_level = NumericProperty(0)
-    access = ObjectProperty(None)
+    # connection = ObjectProperty()
+    current_user = ObjectProperty(AccessModel())
     gui = ObjectProperty()
-    api_response = ObjectProperty()
-
-    timer_cnt = BoundedNumericProperty(5, min=0, max=ACCESS_TIMEOUT)
-    timer = None
     _mqttc = mqtt.Client
 
     def __init__(self, cfg: dict) -> None:
         super().__init__()
 
-
-        bell_config = MqttStringConfig(**cfg['bell'])
-
         door_list = []
         for door, d_cfg in  cfg['doors'].items():
             print(f"new_door: {door}")
-            new_door = Door(door_id=door, name=d_cfg['name'], command_topic=d_cfg['command_topic'], state_topic=d_cfg['state_topic'])
+            new_door = Door(id=door, name=d_cfg['name'])
             # new_door.set_relay()
             door_list.append(new_door)
             
-        doors_config = DoorsConfig(doors=door_list)
+        self.doors_config = DoorsConfig(doors=door_list)
+        self.bell_config = MqttStringConfig(**cfg['bell'])
+        self.garage_config = MqttStringConfig(**cfg['garage'])
+        self.mode_config = MqttStringConfig(**cfg['mode'])
+        self.state_config = MqttStringConfig(**cfg['state'])
 
         print(cfg['garage'])
-
-        garage_config=MqttStringConfig(**cfg['garage'])
-
-        mode_config = MqttStringConfig(**cfg['mode'])
 
         self.kelvin = kelvin_rgb_to_kivy()
         self.azure = get_color_from_hex('#f0ffff')
@@ -102,11 +165,6 @@ class DoorMonitorApp(MDApp):
         self.theme_cls.accent_palette_hue = "500"
         self.theme_cls.theme_style = "Light"
 
-        self.doors_config = doors_config
-        self.bell_config = bell_config
-        self.garage_config = garage_config
-        self.mode_config = mode_config
-        
         self.backlight = Backlight()
 
         
@@ -128,92 +186,81 @@ class DoorMonitorApp(MDApp):
                 else:
                     screen_kwargs = {}
                     screen_kwargs.update({'name':screen})
-                    # screen_kwargs.update({'controller':self})
-                    # screen_kwargs.update({'sub':self.screens[screen].get("sub", None)})
-                    # screen_kwargs.update({'memory':kwargs.get(screen,None)})
-
                     print(f'SCREEN NAME IS: {screen}')
                     print(f'with kwargs: {screen_kwargs}')
-
                     self.screens[screen]["object"]=eval('NewScreen')(**screen_kwargs)
-
                     self.gui.add_widget(self.screens[screen]["object"])
             
 
         self.change_screen(self.gui.screen_names[0])
 
+        self.screen_timer = Timer(callback=self.screen_time_out ,time=SCREEN_TIMER)
+        self.log_out_timer = Timer(callback= self.log_out ,time=LOGOUT_TIMER)
 
-    def presence_out_of_bounds(self, am:AccessModel):
-        print(f"USER OUT OF BOUNDS {am}")
+
+    # def presence_out_of_bounds(self, am:AccessModel):
+    #     print(f"USER OUT OF BOUNDS {am}")
     
 
-    def presence_detected(self, am:AccessModel):
-        print(f"presence_detected {am}")
-        if am.name:
-            self.current_user = am.name
-            toast(f"Velkommen {am.name}")
-        if am.access_level>0:
-            self.access_level = am.access_level
-            self.change_screen('Control')
-            self.screens['DoorBell']["object"].login_feedback(True)
-    # def detected_beacon_response(self, request, result):
-    #     if result is not None:
-    #         try:
-    #             self.access_level = result
-    #             if self.access_level > 0:
-    #                 self.change_screen('Control')
-    #                 self.screens['DoorBell']["object"].login_feedback(True)
-    #             else:
-    #                 print("Login failed")
-    #                 self.screens['DoorBell']["object"].login_feedback(False)
-    #         except ValueError as e:
-    #             print(f"result: {result}")
-    #             print(e)
-    #     else:
-    #         print(f"result: {result}")
+    def presence_detected(self, am:dict):
+        am=AccessModel(**am, login_state = LoginState.PRESENCE_IN)
+        print(f"presence_detected: {am}")
+        # if self.current_user != am.name:
+        print(f"self.current_user: {self.current_user }")
+        if self.current_user.login_state == LoginState.OUT:
+            # if self.current_user != am:
+            print("Setting new user")
+            self.current_user = am
+        elif self.current_user.name == am.name:
+            self.extend_screen_timer()
 
-    # # def detected_beacon(self, devices_discovered, address, packet_type):
-    # #         print(f'found: {devices_discovered} with address {address} aand packet type {packet_type}')
+    
+    def on_current_user(self, instance, value):
+        print(value)
+        try:
+            if value.access_level>0:
+                if value.name is not None:
+                    user = str(value.name)
+                    print(f"Current user is {user}")
+                    toast(f"Velkommen {user}")
+                else:
+                    print(f"Login user is {None}")
 
-    # def detected_beacon(self, uuid, rssi):
-    #     print(f'found uuid: {uuid} with rssi {rssi}')
-    #     detected_beacon(on_success=self.detected_beacon_response,uuid=uuid, rssi=rssi)
+                self.change_screen('Control')
+                self.screens['DoorBell']["object"].login_feedback(True)
+        except Exception as e:
+            print(e)
 
-    def get_door_name(self, door_id, *args):
-        print(door_id)
-        door = self.doors_config.get_by_id(door_id)
+
+    def get_door_name(self, door_nr, *args):
+        print(door_nr)
+        door = self.doors_config.get_name_by_nr(door_nr)
         if door is not None:
             return door.name
         else:
             return ""
 
-    # @property
-    # def access_level(self):
-    #     print(f"current access level: {self.access_level}")
-    #     return self.access_level
+    def get_door_id(self, door_nr, *args):
+        print(door_nr)
+        door = self.doors_config.get_id_by_nr(door_nr)
+        if door is not None:
+            return door.name
+        else:
+            return ""
+    
 
-    def on_door_states(self, *args):
-        print("on_door_states")
+    @property
+    def access_level(self):
+        return self.current_user.access_level
+
+
+    # def on_door_states(self, *args):
+    #     print("on_door_states")
+
 
     def on_start(self):
         self.make_client()
         
-
-
-    # def try_pin(self, pin):
-    #     """"
-    #     Log in.
-
-    #     Log in to sw with user and password. Hardcoded for now. Should interact with DB.
-
-    #     Args:
-    #         user:       Username
-    #         password:   Password
-
-    #     """
-    #     success = False
-    #     success = self.api.authenticate_pin(pin)
-
 
     def next_screen(self):
         self.gui.next_screen()
@@ -236,68 +283,55 @@ class DoorMonitorApp(MDApp):
             Widget containing GUI
 
         """
+        reactor.listenTCP(80, server.Site(WebServerResource(self)))
+        # create_app(self)
         return self.gui
 
 
 
-    def try_login_response(self, request, result):
-        self.access_level = result
-        if result > 0:
-            self.change_screen('Control')
-            self.screens['DoorBell']["object"].login_feedback(True)
-        else:
-            print("Login failed")
-            self.screens['DoorBell']["object"].login_feedback(False)
+    def login_from_pin(self, result):
+        print(f"login response: {result}")
+        print(f"self.current_user: {self.current_user}")
+        if self.current_user.login_state == LoginState.OUT:
+            self.current_user = AccessModel(access_level=result, login_state = LoginState.PIN_IN)
+                # if result > 0:
+                #     self.change_screen('Control')
+                #     self.screens['DoorBell']["object"].login_feedback(True)
+                # else:
+                #     print("Login failed")
+                #     self.screens['DoorBell']["object"].login_feedback(False)
 
 
 
     def log_out(self, *args):
-        self.access_level = 0
-        self.change_screen("DoorBell")
-        print(f"Log out, access level is: {self.access_level}")
+        print(f"Log out, user {self.current_user.name}")
+        self.current_user = AccessModel(access_level=0, login_state = LoginState.OUT)
+        print(f"Logged out, user {self.current_user}")
+        if self.screen_timer.running:
+            self.screen_timer.stop()
+        if self.log_out_timer.running:
+            self.log_out_timer.stop()
 
-    # def setaccess_level(self, level):
-    #     self.access_level = level
-    #     print(f"access level is: {self.access_level}")
         
-
-    def start_log_out_timer(self):
-        if self.access_level > 0:
-            print(f"access timeout set")
-            # self.acccess_timeout = Clock.schedule_once(self.acccess_timeout, ACCESS_TIMEOUT)
-            self.timer_cnt = ACCESS_TIMEOUT
-            self.timer = Clock.schedule_interval(self.tic, 1)
-    
-
-    def cancel_log_out_timer(self):
-        self.timer.cancel()
+    def extend_log_out_timer(self):
+        self.log_out_timer.reset()
 
 
-    def tic(self, dt):
-        self.timer_cnt -= 1
+    def start_screen_timer(self):
+        self.screen_timer.start()
 
 
-    def on_timer_cnt(self, *args):
-        if self.timer_cnt == 0:
-            self.cancel_log_out_timer()
+    def screen_time_out(self):
+        self.change_screen('DoorBell')
+        if self.current_user.login_state == LoginState.PIN_IN:
+            # self.start_log_out_timer()
+            self.log_out_timer.start()
+        else:
             self.log_out()
 
 
-    def extend_log_out_timer(self):
-        self.timer_cnt = ACCESS_TIMEOUT
-
-
-    # def acccess_timeout(self, dt):
-    #     self.log_out()
-    #     print(f"access level timeout")
-    #     self.acccess_timeout.cancel()
-            
-
-
-    def try_login(self, pin, *args):
-        try_login(pin=pin, on_success=self.try_login_response)
-
-
+    def extend_screen_timer(self):
+        self.screen_timer.reset()
 
 
     #### MQTT STUFF ####
@@ -309,14 +343,18 @@ class DoorMonitorApp(MDApp):
         self._mqttc.on_connect = self.mqtt_on_connect
         self._mqttc.on_publish = self.mqtt_on_publish
         self._mqttc.on_subscribe = self.mqtt_on_subscribe
+        # self._mqttc.on_disconnect = self.mqtt_on_disconnect
+
         self.mqttc_connect_to_broker()
-        self.mqttc_subscribe()
-        self.mqttc_run()
+
 
 
     def mqtt_on_connect(self, mqttc, obj, flags, rc):
         print("rc: "+str(rc))
         print(f"flag: {flags}")
+        self.mqttc_subscribe()
+        self.mqttc_run()
+        
 
 
     def mqtt_on_message(self, mqttc, obj, msg):
@@ -324,18 +362,18 @@ class DoorMonitorApp(MDApp):
         topic = msg.topic
         payload = msg.payload.decode("utf-8") 
 
-        door = self.doors_config.get_by_state_topic(topic)
-        if door is not None:
-            print(f"state received")
-            if payload == DOORLOCK_STATUS_PAYLOAD.LOCKED:
-                door.state="LOCKED"
-                self.screens['Control']["object"].update_door_states(door.door_id,True)
+        # door = self.doors_config.get_by_state_topic(topic)
+        # if door is not None:
+        #     print(f"state received")
+        #     if payload == DOORLOCK_STATE.LOCKED:
+        #         door.state="LOCKED"
+        #         self.screens['Control']["object"].update_door_states(door.door_id,True)
                 
-            elif payload == DOORLOCK_STATUS_PAYLOAD.UNLOCKED:
-                door.state="UNLOCKED"
-                self.screens['Control']["object"].update_door_states(door.door_id, False)
+        #     elif payload == DOORLOCK_STATE.UNLOCKED:
+        #         door.state="UNLOCKED"
+        #         self.screens['Control']["object"].update_door_states(door.door_id, False)
          
-        elif topic == self.mode_config.command_topic:
+        if topic == self.mode_config.command_topic:
             print(f"mode received: {payload}")
             self.mode_config.state = payload
 
@@ -361,9 +399,11 @@ class DoorMonitorApp(MDApp):
 
 
     def mqttc_subscribe(self):
-        for door in self.doors_config.doors:
-            self._mqttc.subscribe(door.state_topic, qos=0)
+        # for door in self.doors_config.doors:
+        #     print(f"Subscribing: {door.topic.state}")
+        #     self._mqttc.subscribe(door.topic.state, qos=1)
         self._mqttc.subscribe(self.mode_config.command_topic, qos=0)
+        self._mqttc.subscribe(self.state_config.command_topic, qos=0)
 
     def mqttc_run(self):     
         self._mqttc.loop_start()
@@ -379,52 +419,39 @@ class DoorMonitorApp(MDApp):
 
 
 
-    def toggle_door(self, door, locked, *args):
-        if locked:
-            
-            for d in self.doors_config.doors:
-                if d.name == door:
-                    print(f"mqtt unlock door {door}")
-                    self._mqttc.publish(d.command_topic, payload= DOORLOCK_COMMAND_PAYLOAD.UNLOCK)
-        else:
-            for d in self.doors_config.doors:
-                if d.name == door:
-                    print(f"mqtt lock door {door}")
-                    self._mqttc.publish(d.command_topic, payload= DOORLOCK_COMMAND_PAYLOAD.LOCK)
-        
+
+    def toggle_state(self, *args):
+        print(f"Toggle state: {args}")
+  
         
     def garage_open(self, *args):
-         self._mqttc.publish(self.garage_config.command_topic, payload= GARAGE_COMMAND_PAYLOAD.OPEN)
+        self.garage_command(GARAGE_COMMAND_PAYLOAD.OPEN)
 
     def garage_close(self, *args):
-         self._mqttc.publish(self.garage_config.command_topic, payload= GARAGE_COMMAND_PAYLOAD.CLOSE)
+        self.garage_command(GARAGE_COMMAND_PAYLOAD.CLOSE)
 
     def garage_stop(self, *args):
-         self._mqttc.publish(self.garage_config.command_topic, payload= GARAGE_COMMAND_PAYLOAD.STOP)
+        self.garage_command(GARAGE_COMMAND_PAYLOAD.STOP)
 
+    def garage_command(self, command):
+        self._mqttc.publish(self.garage_config.command_topic, payload=command)
 
     def next_screen(self):
         self.change_screen(self.gui.next())
 
-
     def prev_screen(self):
         self.change_screen(self.gui.previous())
 
-
     def change_screen(self, screen_name):
-
-        print(f"entering screen {screen_name}")
-
-        # if screen_name == self.ids['sm'].screen_names[0]:
-        #     print(f"screen is first")
-        #     self.ids['sm'].current_screen.content.is_first()
-
-        # else:
-        #     print(f"screen is inbetween")
-        #     # self.ids['sm'].current_screen.content.override_allow_prev(True)
-
-        # if screen_name == self.ids['sm'].screen_names[-1]:
-        #     print(f"screen is last")
-        #     self.ids['sm'].current_screen.content.is_last()
-
+        if screen_name == 'Control':
+            self.start_screen_timer()
         self.gui.current = screen_name
+
+
+    # def mqtt_on_disconnect(self, client, userdata, rc):
+    #     if rc != 0:
+    #         print("Unexpected disconnection.")
+
+            # self.mqttc_connect_to_broker()
+            # # self.mqttc_subscribe()
+            # self.mqttc_run()

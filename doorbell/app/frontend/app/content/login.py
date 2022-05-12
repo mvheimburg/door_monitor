@@ -19,10 +19,10 @@ from kivy.clock import Clock
 from kivy.animation import Animation
 
 from frontend.framework.content import ContentBase
-
+from frontend.app.api import try_login
 
 from const import(
-     LOGIN_TIMOUT
+     LOGIN_TIMEOUT
     ,PIN_SIZE
 )
 
@@ -106,7 +106,7 @@ class Login(ContentBase):
 
     entry_object = BoundedNumericProperty(5, min=0, max=5)
     entry = None
-    timeout_object = BoundedNumericProperty(LOGIN_TIMOUT, min=0, max=LOGIN_TIMOUT)
+    timeout_object = BoundedNumericProperty(LOGIN_TIMEOUT, min=0, max=LOGIN_TIMEOUT)
     timeout = None
     
     def __init__(self, **kwargs):
@@ -121,14 +121,15 @@ class Login(ContentBase):
         # if self.collide_point(touch):
         if self.collide_point(touch.x, touch.y):
             print("reset login timer")
-            self.timeout_object = LOGIN_TIMOUT
+            self.timeout_object = LOGIN_TIMEOUT
         return super().on_touch_down(touch)
 
 
     def enter(self):
         self.reset_pin()
-        self.timeout_object = LOGIN_TIMOUT
+        self.timeout_object = LOGIN_TIMEOUT
         self.timeout = Clock.schedule_interval(self.tic_timeout, 1)
+        ## Delay to avoid unintentional keypress
         self.entry_object = 2
         self.entry = Clock.schedule_interval(self.tic_entry, 0.1)
     
@@ -158,7 +159,7 @@ class Login(ContentBase):
 
     def on_timeout_object(self, *args):
         if self.timeout_object == 0:
-            self.app.start_log_out_timer()
+            # self.app.start_log_out_timer()
             self.controller.hide_login()
 
 
@@ -175,8 +176,22 @@ class Login(ContentBase):
 
             if self.current_pin_idx == PIN_SIZE-1:
                 pin=f"{self.current_pin[0]}{self.current_pin[1]}{self.current_pin[2]}{self.current_pin[3]}"
-                self.app.try_login(pin=pin)
+                toast("Tester pin")
+                print(f"Tester pin: {pin}")
+                self.try_login(pin=pin)
 
+
+    def try_login_response(self, request, result):
+        print(f"login response: {result}")
+        if result:
+            self.app.login_from_pin(result)
+        else:
+            self.action_input('clear')
+            toast('Ingen bruker matcher PIN kode')
+
+
+    def try_login(self, pin, *args):
+        try_login(pin=pin, on_success=self.try_login_response)
 
 
     def action_input(self, input):
@@ -191,11 +206,6 @@ class Login(ContentBase):
             self.current_pin_idx = -1
             self.current_pin=[0]*PIN_SIZE
             self.icon_list=["checkbox-blank-circle-outline"]*PIN_SIZE
-
-
-    def login_failed(self):
-        self.action_input('clear')
-        toast('Ingen bruker matcher PIN kode')
 
 
     def wobble(self):

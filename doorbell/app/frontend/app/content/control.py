@@ -11,6 +11,9 @@ from kivymd.uix.carousel import MDCarousel
 from kivy.uix.image import Image
 from kivymd.uix.button import MDRaisedButton, MDIconButton
 from kivymd.uix.card import MDCard
+from kivymd.uix.boxlayout import MDBoxLayout
+
+from functools import partial
 
 from kivymd.uix.behaviors import TouchBehavior
 from kivy.properties import ObjectProperty, BooleanProperty, DictProperty, StringProperty, BoundedNumericProperty, NumericProperty
@@ -23,12 +26,14 @@ from models.memory import DoorState, GarageState
 
 from frontend.utils import hide_widget
 
+from frontend.app.api import lock_door, unlock_door, door_state, toggle_door
+
 from const import (
-     CONTROL_TIMEOUT
-    ,SCREEN_WIDTH
+     SCREEN_WIDTH
     ,SCREEN_HEIGHT
     ,LEFT_BOX_WIDTH
     ,RIGHT_BOX_WIDTH
+    ,DOORLOCK_STATE
 )
 
 LOAD_FILE = 'control.kv'
@@ -37,15 +42,70 @@ print(FILE_PATH)
 Builder.load_file(FILE_PATH)
 
 
-class DoorCard(MDCard):
+
+
+class HouseCard(MDBoxLayout):
     door_id=StringProperty("")
     controller = ObjectProperty(None)
-    name=StringProperty("")
+    name=StringProperty("Test")
     label=BooleanProperty(True)
     size_fac=NumericProperty(1)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+
+
+    def on_label(self, *args):    
+        if not self.label:
+            hide_widget(self.ids.houselabel)
+            
+    
+    def on_size_fac(self, *args):
+        self.ids.housebutt.user_font_size *= self.size_fac
+        self.ids.houselabel.user_font_size *= self.size_fac
+
+        
+    # def update_state(self, state):
+    #     self.ids.doorbutt.locked = state
+
+
+
+
+class HouseButton(MDIconButton):
+    locked_icon = "door-closed-lock"
+    unlocked_icon = "door-closed"
+
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.icon = "lock-question"
+        self.user_font_size=60
+
+    
+    def on_locked(self, *args):
+        if self.locked:
+            self.icon = self.locked_icon
+        else:
+            self.icon = self.unlocked_icon
+
+
+
+class DoorCard(MDBoxLayout):
+    pretty=StringProperty("")
+    controller = ObjectProperty(None)
+    name=StringProperty("")
+    label=BooleanProperty(True)
+    size_fac=NumericProperty(1)
+
+    # def __init__(self, **kwargs):
+    #     super().__init__(**kwargs)
+    #     self.ids.doorbutt.fbind('on_press', self.toggle_door)
+
+    def enter(self):
+        door_state(on_success=self.door_state_response, door_name=self.name)
+    
+    def leave(self):
+        pass
 
 
     def on_label(self, *args):    
@@ -60,21 +120,66 @@ class DoorCard(MDCard):
         
     def update_state(self, state):
         self.ids.doorbutt.locked = state
+
+
+    def door_state_response(self, request, result):
+        if result == DOORLOCK_STATE.LOCKED:
+            print(f"door: {self.name} is LOCKED")
+            self.ids.doorbutt.locked = True
+        elif result == DOORLOCK_STATE.UNLOCKED:
+            print(f"door: {self.name} is UNLOCKED")
+            self.ids.doorbutt.locked = False
+
+
+    def unlock_door_response(self, request, result):
+        print(request)
+        print(result)
+
+
+    def lock_door_response(self, request, result):
+        print(request)
+        print(result)
+    
+
+    def toggle_door_response(self, request, result):
+        print(request)
+        print(result)
+
+
+    def toggle_door(self, *args):
+        print("Toggle door")
+        toggle_door(on_success=self.toggle_door_response, door_name=self.name)
+        # if locked:
+        #     unlock_door(on_success=self.unlock_door_response, door_name=self.id)
+        #     # for d in self.doors_config.doors:
+        #     #     if d.name == door:
+        #     #         print(f"mqtt unlock door {door}")
+        #             # self._mqttc.publish(d.command_topic, payload= DOORLOCK_COMMAND_PAYLOAD.UNLOCK)
+
+        # else:
+        #     lock_door(on_success=self.lock_door_response, door_name=self.id)
+        #     # for d in self.doors_config.doors:
+        #     #     if d.name == door:
+        #     #         print(f"mqtt lock door {door}")
+        #     #         self._mqttc.publish(d.command_topic, payload= DOORLOCK_COMMAND_PAYLOAD.LOCK)
         
 
 
 class DoorButton(MDIconButton):
-    locked = BooleanProperty(None)
+    locked = BooleanProperty(True)
     locked_icon = "door-closed-lock"
     unlocked_icon = "door-closed"
 
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.icon = "lock-question"
+        self.icon = self.locked_icon
         self.user_font_size=60
+    #     self.register_event_type('on_toggle')
 
-    
+    # def on_toggle(self):
+    #     pass
+
     def on_locked(self, *args):
         if self.locked:
             self.icon = self.locked_icon
@@ -113,7 +218,7 @@ class Control(ScreenBehaviour):
     # door_states = ObjectProperty(None)
     # door_states= DictProperty()
     garage_state=ObjectProperty()
-    timer_object = BoundedNumericProperty(5, min=0, max=CONTROL_TIMEOUT)
+    # timer_object = BoundedNumericProperty(5, min=0, max=CONTROL_TIMEOUT)
     timer = None
 
     def __init__(self, **kwargs):
@@ -139,35 +244,31 @@ class Control(ScreenBehaviour):
 
 
     def on_touch_down(self, touch):
-        
         # if self.collide_point(touch):
         if self.collide_point(touch.x, touch.y):
             print("reset timer")
-            self.timer_object = CONTROL_TIMEOUT
+            self.app.extend_screen_timer()
+            # self.timer_object = CONTROL_TIMEOUT
         return super().on_touch_down(touch)
 
+
     def _enter(self):
-        self.timer_object = CONTROL_TIMEOUT
-        self.timer = Clock.schedule_interval(self.tic, 1)
+        pass
+        # for child in self.ids.door_box.children:
+        #     print(child)
+        #     try:
+        #         child.enter()
+        #     except Exception as e:
+        #         print(e)
     
     def _leave(self):
-        self.timer.cancel()
-
-    def tic(self, dt):
-        self.timer_object -= 1
-
-    def on_timer_object(self, *args):
-        if self.timer_object == 0:
-            self.app.start_log_out_timer()
-            self.app.change_screen("DoorBell")
+        pass
 
 
     def on_door_states(self, *args):
         print("CONTROL: ON DOOR STATES")        
         
     def update_door_states(self, door: str, state: bool):
-        # self.door_states.update({door:DoorState(locked=state)})
-        # self.door_screens[door].update_state(state)
         print(self.ids)
         self.ids[door].update_state(state)
         

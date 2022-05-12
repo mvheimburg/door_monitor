@@ -1,4 +1,5 @@
 **/sosecret.yaml
 .venv
 .frontend_venv/
-.balena/secrets/secrets.yaml
+room-assistant/config/local.yml
+/room-assistant/config/local.yml

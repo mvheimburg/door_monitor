@@ -1,35 +1,17 @@
 version: '2.1'
 services:
 
-  room-assistant:
-    image: mkerix/room-assistant
+  ra-main-door:
+    build: 
+      context: room-assistant
+      dockerfile: Dockerfile
     network_mode: host
     restart: always
     labels:
       io.balena.features.dbus: 1 
-    # volumes:
-    #   - /var/run/dbus:/var/run/dbus
-    environment:
-      NODE_CONFIG: >
-        {
-          "global": {
-            "instanceName": "main-door",
-            "integrations": ["homeAssistant", "bluetoothLowEnergy"]
-          },
-          "bluetoothLowEnergy": {
-            "onlyIBeacon": true,
-            "denylist": [1,2,3]
-          },
-          "homeAssistant": {
-            "mqttUrl": "mqtt://192.168.1.2:1883",
-            "mqttOptions": {
-              "username": "doormonitorpresence",
-              "password": "doormonitorpresence!"
-            }
-          }
-        }
     ports:
-      - 6415:6415  
+      - 6425:6425  
+      - 6415:6415
 
   doorbell:
     build: 
@@ -39,21 +21,23 @@ services:
     labels:
       io.balena.features.dbus: 1 
     restart: always
-    # network_mode: host
     devices:
       - /dev/dri
     group_add:
       - video
     volumes:
       - x11:/tmp/.X11-unix
-    depends_on:
-      - xserver
+    # depends_on:
+    #   - xserver
     ports:
-      - 8000:8000/tcp
-      - 80:80/tcp
-      # - 443:443/tcp
-    # cap_add:
-    #   - NET_ADMIN
+      - 8000:8000
+      - 80:80
+    # command: >
+    #   bash -c "python -m main"
+    # command: >
+    #   bash -c "cd /usr/src/app 
+    #     && python -m main"
+
 
   xserver:
     image: balenablocks/xserver
@@ -61,19 +45,9 @@ services:
     privileged: true
     volumes:
       - x11:/tmp/.X11-unix
+    # depends_on:
+    #   - doorbell
 
 volumes:
   x11:
 
-  # presence:
-  #   build: ./presence
-  #   cap_add:
-  #     - NET_ADMIN
-  #   restart: always
-  #   network_mode: host
-  # nfc:
-  #   build: ./nfc
-  #   devices:
-  #     - "/dev/tty:S0:/dev/tty:S0"
-  #   restart: always
-  #   network_mode: host

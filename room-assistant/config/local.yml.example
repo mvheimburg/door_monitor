@@ -1,0 +1,19 @@
+cluster:
+  peerAddresses: 
+    - xxxx
+  port: 6425
+global:
+  instanceName: xxxxx
+  integrations:
+    - bluetoothLowEnergy
+    - homeAssistant
+bluetoothLowEnergy:
+  onlyIBeacon: true
+  rssiFactor: 1.03
+  allowlist:
+    - xxxx
+homeAssistant:
+  mqttUrl: xxxx
+  mqttOptions:
+    username: xxxx
+    password: xxxx

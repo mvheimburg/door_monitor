@@ -59,7 +59,7 @@ class CarouselWithDoubleTap(MDCarousel, TouchBehavior):
 
 
     def on_long_touch(self, *args):
-        print('doubltap')
+        print('on_long_touch')
         self.controller.carousel_double_tap()
     
 
@@ -113,10 +113,11 @@ class DoorBell(ScreenBehaviour):
 
 
     def login_feedback(self, success):
-        if success:
-            self.hide_login()
-        else:
-            self.login_wid.login_failed()
+        if self.login_visible:
+            if success:
+                self.hide_login()
+            else:
+                self.login_wid.login_failed()
 
 
     def on_touch_down(self, touch):

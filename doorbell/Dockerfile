@@ -9,6 +9,9 @@ ARG PYTHON_VERSION_MINOR
 ARG PIP_VERSION
 ARG PYTHON_VERSION=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
+# ENV LOCKMASTER_URL=${LOCKMASTER_URL}
+ENV DISPLAY=:0
+
 RUN apt update
 
 RUN install_packages \
@@ -46,6 +49,7 @@ RUN install_packages \
 
 RUN mkdir -p /usr/src/app/
 WORKDIR /usr/src/app
+ENV KIVY_HOME=/usr/src/app
 
 # RUN python --version
 RUN python -m pip install --upgrade \
@@ -57,11 +61,11 @@ RUN python -m pip install --upgrade \
 COPY requirements.txt ./
 RUN python -m pip install --no-cache-dir -r requirements.txt
 
-ENV KIVY_HOME=/usr/src/app
+
 COPY config.ini config.ini
 
 COPY ./app /usr/src/app/
-COPY start.sh ./
 
+COPY start.sh ./
 ENTRYPOINT ["bash", "start.sh"]
-ENV DISPLAY=:0
+

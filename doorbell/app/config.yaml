@@ -6,29 +6,25 @@ bell:
     command_topic: "bell/ring/toggle"
 
 doors:
-    d1:
+    main:
         name: Front
-        command_topic: "door/1/cmd"
-        state_topic: "door/1/state"
-        state: "Unknown"
-    d2:
+    garage:
         name: Garasje
-        command_topic: "door/2/cmd"
-        state_topic: "door/2/state"
-        state: "Unknown"
-    d3:
+    workshop:
         name: Verksted
-        command_topic: "door/3/cmd"
-        state_topic: "door/3/state"
-        state: "Unknown"
+
 
 garage:
     command_topic: "garage/gate/cmd"
     state_topic: "garage/gate/state"
     state: "Unknown"
 
-
 mode:
-    command_topic: "bell/mode/cmd"
-    state_topic: "bell/mode/state"
+    command_topic: "house/mode/cmd"
+    state_topic: "house/mode/state"
+    state: "Unknown"
+
+state:
+    command_topic: "house/state/cmd"
+    state_topic: "house/state/state"
     state: "Unknown"

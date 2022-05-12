@@ -1,3 +1,3 @@
-FROM mkerix/room-assistant:latest-rpi
+FROM mkerix/room-assistant:latest
 
-COPY /config /room-assistant/config
+COPY /config/local.yml /room-assistant/config/local.yml

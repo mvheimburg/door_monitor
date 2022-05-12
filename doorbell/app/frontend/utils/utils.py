@@ -1,7 +1,11 @@
+from subprocess import call
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.button import MDFlatButton
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.card import MDCard
+from kivy.clock import Clock
+
+# from const import NoneType
 
 
 def hide_widget(wid, dohide=True):
@@ -39,27 +43,45 @@ def show_pop_up(title, text):
     pop_up.open()
 
 
-# def show_input_dialog(**kwargs):
 
-#     title = kwargs.get('text', None)
-#     hint_text = kwargs.get('hint_text', None)
-#     callback = kwargs.get('callback', None)
+class Timer():
+    def __init__(self, callback: callable, time: int) -> None:
+        super().__init__()
+        self._callback = callback
+        self._time_max = time
+        self._time_count = time
+        self._timer = None
+        self._running = False
 
-#     content = InputCard()
+    @property
+    def running(self):
+        return self._running
 
-#     input_dialog = MDDialog(
-#             title=title,
-#             text=hint_text,
-#             content_cls=content,
-#             buttons=[
-#                     MDFlatButton(
-#                         text="CANCEL",
-#                         text_color=self.app.theme_cls.primary_color,
-#                     ),
-#                     MDFlatButton(
-#                         text="ACCEPT",
-#                         text_color=self.app.theme_cls.primary_color,
-#                     ),
-#                 ],
-#     )
-#     input_dialog.open()
+    def reset(self):
+        self._time_count = self._time_max
+
+    def start(self):
+        print(f"start timer")
+        print(f"type(self._timer): {type(self._timer)}")
+        if self._timer is None:
+            if not self._running:
+                self._time_count = self._time_max
+                self._timer = Clock.schedule_interval(self.tic, 1)
+                self._running = True
+
+    def stop(self):
+        print(f"stop timer")
+        print(f"type(self._timer): {type(self._timer)}")
+        if self._timer is not None:
+            if self._running:
+                self._timer.cancel()
+                self._timer = None
+                self._running = False
+
+    def tic(self, dt):
+        if self._time_count <= 0:
+            print(f"timer finished")
+            self.stop()
+            self._callback()
+        else:
+            self._time_count -= 1

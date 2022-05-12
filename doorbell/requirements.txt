@@ -8,17 +8,20 @@ pydantic_yaml[ruamel]
 python-box[ruamel.yaml]
 mypy
 kivymd
+twisted
+fastapi
+# SOAPpy-py3
 # construct
 # ahocorapy
 # pybluez==0.22
 # gattlib
 # pygatt[GATTTOOL]
 # beacontools[scan]
-uvicorn
-hypercorn
-fastapi
-dependency-injector
-trio
-anyio[trio]
-# asyncio
+uvicorn[standard]
+# hypercorn
+# fastapi
+# dependency-injector
+# trio
+# anyio[trio]
+# # asyncio
 # anyio[asyncio]

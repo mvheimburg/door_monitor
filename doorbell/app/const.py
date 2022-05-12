@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, IntEnum
 from os import  environ
 
 class MODE_COMMAND_PAYLOAD():
@@ -13,7 +13,7 @@ class DOORLOCK_COMMAND_PAYLOAD():
     LOCK="LOCK"
     UNLOCK="UNLOCK"
 
-class DOORLOCK_STATUS_PAYLOAD():
+class DOORLOCK_STATE():
     LOCKED="LOCKED"
     UNLOCKED="UNLOCKED"
 
@@ -30,9 +30,10 @@ class GARAGE_STATUS_PAYLOAD():
     CLOSING="closing"
 
 
-ACCESS_TIMEOUT = 5*60
-LOGIN_TIMOUT = 2*60
-CONTROL_TIMEOUT = 1*60
+SCREEN_TIMER = 20
+LOGOUT_TIMER = 3*60
+LOGIN_TIMEOUT = 2*60
+# CONTROL_TIMEOUT = 1*60
 
 PIN_SIZE = 4
 
@@ -51,3 +52,10 @@ MQTT_USERNAME   =environ.get('MQTT_USERNAME')
 MQTT_PASSWORD   =environ.get('MQTT_PASSWORD')
 MQTT_CLIENT_ID  =environ.get('MQTT_CLIENT_ID')
 LOCKMASTER_URL  =environ.get('LOCKMASTER_URL')
+
+NoneType = type(None)
+
+class LoginState(IntEnum):
+    OUT = 0
+    PIN_IN=1
+    PRESENCE_IN=2
