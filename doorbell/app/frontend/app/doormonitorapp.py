@@ -198,6 +198,16 @@ class DoorMonitorApp(MDApp):
         self.log_out_timer = Timer(callback= self.log_out ,time=LOGOUT_TIMER)
 
 
+        self._mqttc.on_message = self.mqtt_on_message
+        self._mqttc.on_connect = self.mqtt_on_connect
+        self._mqttc.on_publish = self.mqtt_on_publish
+        self._mqttc.on_subscribe = self.mqtt_on_subscribe
+        self._mqttc = mqtt.Client(MQTT_CLIENT_ID)
+        self._mqttc.username_pw_set(MQTT_USERNAME, password=MQTT_PASSWORD)
+        
+        print("STARTING MQTT")
+        self._mqttc.connect(MQTT_BROKER, port=MQTT_PORT, keepalive=60)
+        self._mqttc.loop_start()
     # def presence_out_of_bounds(self, am:AccessModel):
     #     print(f"USER OUT OF BOUNDS {am}")
     
@@ -258,10 +268,13 @@ class DoorMonitorApp(MDApp):
     #     print("on_door_states")
 
 
-    def on_start(self):
-        self.make_client()
+    # def on_start(self):
+    #     # self.mqttc_connect_to_broker()
+    #     print("STARTING MQTT")
+    #     self._mqttc.loop_start()
+    #     self._mqttc.connect(MQTT_BROKER, port=MQTT_PORT, keepalive=60)
         
-
+        
     def next_screen(self):
         self.gui.next_screen()
 
@@ -302,7 +315,6 @@ class DoorMonitorApp(MDApp):
                 #     self.screens['DoorBell']["object"].login_feedback(False)
 
 
-
     def log_out(self, *args):
         print(f"Log out, user {self.current_user.name}")
         self.current_user = AccessModel(access_level=0, login_state = LoginState.OUT)
@@ -334,26 +346,11 @@ class DoorMonitorApp(MDApp):
         self.screen_timer.reset()
 
 
-    #### MQTT STUFF ####
-    def make_client(self):
-        # parameters = {'self': self}
-        self._mqttc = mqtt.Client(MQTT_CLIENT_ID)
-        # self._mqttc = mqtt.Client(MQTT_CLIENT_ID, userdata = parameters)
-        self._mqttc.on_message = self.mqtt_on_message
-        self._mqttc.on_connect = self.mqtt_on_connect
-        self._mqttc.on_publish = self.mqtt_on_publish
-        self._mqttc.on_subscribe = self.mqtt_on_subscribe
-        # self._mqttc.on_disconnect = self.mqtt_on_disconnect
-
-        self.mqttc_connect_to_broker()
-
-
-
     def mqtt_on_connect(self, mqttc, obj, flags, rc):
         print("rc: "+str(rc))
         print(f"flag: {flags}")
         self.mqttc_subscribe()
-        self.mqttc_run()
+        # self.mqttc_run()
         
 
 
@@ -391,11 +388,11 @@ class DoorMonitorApp(MDApp):
         #TODO: sett ssl and cert for encrypt
         pass
 
-    def mqttc_connect_to_broker(self):
-        print(f"connecting to broker {MQTT_BROKER} as {MQTT_CLIENT_ID}")
-        # broker_parsed = urllib.parse.urlparse(MQTT_BROKER)
-        self._mqttc.username_pw_set(MQTT_USERNAME, password=MQTT_PASSWORD)
-        self._mqttc.connect(MQTT_BROKER, port=MQTT_PORT, keepalive=60)
+    # def mqttc_connect_to_broker(self):
+    #     print(f"connecting to broker {MQTT_BROKER} as {MQTT_CLIENT_ID}")
+    #     # broker_parsed = urllib.parse.urlparse(MQTT_BROKER)
+    #     self._mqttc.username_pw_set(MQTT_USERNAME, password=MQTT_PASSWORD)
+    #     self._mqttc.connect(MQTT_BROKER, port=MQTT_PORT, keepalive=60)
 
 
     def mqttc_subscribe(self):
@@ -405,8 +402,8 @@ class DoorMonitorApp(MDApp):
         self._mqttc.subscribe(self.mode_config.command_topic, qos=0)
         self._mqttc.subscribe(self.state_config.command_topic, qos=0)
 
-    def mqttc_run(self):     
-        self._mqttc.loop_start()
+    # def mqttc_run(self):     
+    #     self._mqttc.loop_start()
 
     def ring_bell(self):
         print('ringing that bell')
