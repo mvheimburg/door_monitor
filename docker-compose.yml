@@ -21,33 +21,48 @@ services:
     labels:
       io.balena.features.dbus: 1 
     restart: always
-    devices:
-      - /dev/dri
-    group_add:
-      - video
-    volumes:
-      - x11:/tmp/.X11-unix
+    # command: pdm run serve
+    # devices:
+    #   - /dev/dri
+    # group_add:
+    #   - video
+    # volumes:
+    #   - x11:/tmp/.X11-unix
     # depends_on:
     #   - xserver
+
     ports:
-      - 8000:8000
-      - 80:80
+      - 5555:5555
+      # - 80:80
     # command: >
     #   bash -c "python -m main"
     # command: >
     #   bash -c "cd /usr/src/app 
     #     && python -m main"
 
-
-  xserver:
-    image: balenablocks/xserver
-    restart: always
-    privileged: true
+  browser:
+    image: bh.cr/balenalabs/browser-aarch64 # where <arch> is one of aarch64, arm32 or amd64
+    # build: 
+    #   context: browser
+    #   dockerfile: Dockerfile
+    privileged: true # required for UDEV to find plugged in peripherals such as a USB mouse
+    ports:
+        - '5011' # management API (optional)
+        - '35173' # Chromium debugging port (optional)
     volumes:
-      - x11:/tmp/.X11-unix
-    # depends_on:
-    #   - doorbell
+      - 'settings:/data' # Only required if using PERSISTENT flag (see below)
 
+  # xserver:
+  #   image: bh.cr/balenalabs/xserver-rpi
+  #   restart: always
+  #   privileged: true
+  #   volumes:
+  #     - x11:/tmp/.X11-unix
+  #   # depends_on:
+  #   #   - doorbell
+
+# volumes:
+#   x11:
 volumes:
-  x11:
+  settings:
 

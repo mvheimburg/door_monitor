@@ -1,71 +1,40 @@
-ARG PYTHON_VERSION_MAJOR
-ARG PYTHON_VERSION_MINOR
-ARG PIP_VERSION
 
-FROM balenalib/raspberrypi3-64-python:${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
+FROM balenalib/raspberrypi3-64-debian-python:latest
 
-ARG PYTHON_VERSION_MAJOR
-ARG PYTHON_VERSION_MINOR
-ARG PIP_VERSION
-ARG PYTHON_VERSION=${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}
 
-# ENV LOCKMASTER_URL=${LOCKMASTER_URL}
-ENV DISPLAY=:0
-
-RUN apt update
-
-RUN install_packages \
+RUN apt update && apt install -y --no-install-recommends \
 	x11-apps \
 	x11-xserver-utils \
-	libmtdev-dev \
 	mesa-utils \
-	libsdl2-dev \
-	libsdl2-image-dev \
-	libsdl2-mixer-dev \
-	libsdl2-ttf-dev \
 	mesa-common-dev \
-	git-core \
 	build-essential \
-	python${PYTHON_VERSION_MAJOR}-dev \
-	python${PYTHON_VERSION_MAJOR}-setuptools \
-	python${PYTHON_VERSION_MAJOR}-opengl \
-	# # python3-rpi.gpio \
-	libjpeg-dev \
-	libpng-dev 
-	# libbluetooth-dev \
-	# libcap2-bin \
-	# bluez \
-	# bluez-tools \
-	# libboost-python-dev \
-	# libboost-thread-dev \
-	# libbluetooth-dev \
-	# libglib2.0-dev
-
-	# py${PYTHON_VERSION_MAJOR}-dbus
+	wget \
+	curl \
+	# python${PYTHON_VERSION_MAJOR}-pip \
+	# python${PYTHON_VERSION_MAJOR}-setuptools \
+	# python${PYTHON_VERSION_MAJOR}-opengl \
+	libmpv1 \
+	libgtk-3-dev \
+	libgstreamer1.0-dev \
+	libgstreamer-plugins-base1.0-dev \
+	&& rm -rf /var/lib/apt/lists/*
 
 
-# RUN echo 'SUBSYSTEM=="backlight",RUN+="/bin/chmod 666 /sys/class/backlight/%k/brightness /sys/class/backlight/%k/bl_power"' | sudo tee -a /etc/udev/rules.d/backlight-permissions.rules
-# RUN setcap 'cap_net_raw,cap_net_admin+eip' "$(readlink -f "$(which python)")"
+RUN wget https://bootstrap.pypa.io/get-pip.py
+RUN python3 get-pip.py
+RUN curl -sSL https://pdm-project.org/install-pdm.py | python3 -
+ENV PATH=/root/.local/bin:$PATH
 
-RUN mkdir -p /usr/src/app/
-WORKDIR /usr/src/app
-ENV KIVY_HOME=/usr/src/app
+WORKDIR /app
+COPY pyproject.toml /app/pyproject.toml
+COPY pdm.lock /app/pdm.lock
+COPY doorbell/ /app/doorbell
 
-# RUN python --version
-RUN python -m pip install --upgrade \
-    pip \
-	setuptools \
-    wheel
+RUN pdm sync --no-editable
+RUN echo "BUILD FINISHED"
 
+COPY hyper.toml/ /app/hyper.toml
+COPY start.sh/ /app/start.sh
+ENTRYPOINT ["bash", "/app/start.sh"]
 
-COPY requirements.txt ./
-RUN python -m pip install --no-cache-dir -r requirements.txt
-
-
-COPY config.ini config.ini
-
-COPY ./app /usr/src/app/
-
-COPY start.sh ./
-ENTRYPOINT ["bash", "start.sh"]
 
