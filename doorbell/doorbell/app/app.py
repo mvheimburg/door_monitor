@@ -57,7 +57,7 @@ class App(AppRoot):
 
     def initialize(self):
         self.active_view = Views.HOME
-        self.home.start()
+        # self.home.start()
         self.page.update()
 
     def deploy(self):

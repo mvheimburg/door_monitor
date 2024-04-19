@@ -33,3 +33,7 @@ class AppRoot(ABC):
     async def show_pin_end(self):
         pass
 
+    @abstractmethod
+    def run_task(self, func):
+        pass
+        # self.page.run_task(func)

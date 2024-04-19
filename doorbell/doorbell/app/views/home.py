@@ -21,6 +21,7 @@ class Home(MyView):
         self.route = Views.HOME
         self.image_list = self._get_images()
         self.current_image = 0
+        self.running: bool = False
         self.image = self.next_image()
         self.button = ft.IconButton(icon=ft.icons.DOORBELL_ROUNDED, icon_size=80, on_click=self.app.ring_bell)
         self.controls = self._controls()
@@ -56,11 +57,19 @@ class Home(MyView):
                 fit=ft.ImageFit.FIT_HEIGHT,
             )
 
-    def start(self):
+    # def start(self):
+        # self.app.run_task(self.image_carousel)
+
+    def did_mount(self):
+        self.running = True
+        # update_weather calls sync requests.get() and time.sleep() and therefore has to be run in a separate thread
         self.app.run_task(self.image_carousel)
 
+    def will_unmount(self):
+        self.running = False
+
     async def image_carousel(self):
-        while True:
+        while self.running:
             await asyncio.sleep(60)
             self.image = self.next_image()
             self.controls = self._controls()

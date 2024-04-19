@@ -35,6 +35,9 @@ RUN echo "BUILD FINISHED"
 
 COPY hyper.toml/ /app/hyper.toml
 COPY start.sh/ /app/start.sh
+
+ENV PULSE_SERVER=unix:/run/pulse/pulseaudio.socket
+
 ENTRYPOINT ["bash", "/app/start.sh"]
 
 

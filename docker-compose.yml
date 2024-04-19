@@ -21,30 +21,13 @@ services:
     labels:
       io.balena.features.dbus: 1 
     restart: always
-    # command: pdm run serve
-    # devices:
-    #   - /dev/dri
-    # group_add:
-    #   - video
-    # volumes:
-    #   - x11:/tmp/.X11-unix
-    # depends_on:
-    #   - xserver
-
     ports:
       - 5555:5555
-      # - 80:80
-    # command: >
-    #   bash -c "python -m main"
-    # command: >
-    #   bash -c "cd /usr/src/app 
-    #     && python -m main"
+    volumes:
+      - 'pulse:/run/pulse'  
 
   browser:
     image: bh.cr/balenalabs/browser-aarch64 # where <arch> is one of aarch64, arm32 or amd64
-    # build: 
-    #   context: browser
-    #   dockerfile: Dockerfile
     privileged: true # required for UDEV to find plugged in peripherals such as a USB mouse
     ports:
         - '5011' # management API (optional)
@@ -52,17 +35,16 @@ services:
     volumes:
       - 'settings:/data' # Only required if using PERSISTENT flag (see below)
 
-  # xserver:
-  #   image: bh.cr/balenalabs/xserver-rpi
-  #   restart: always
-  #   privileged: true
-  #   volumes:
-  #     - x11:/tmp/.X11-unix
-  #   # depends_on:
-  #   #   - doorbell
+  audio:
+    image: bh.cr/balenalabs/audio-rpi # where <arch> is one of rpi, armv7hf, aarch64 or amd64
+    privileged: true
+    labels:
+      io.balena.features.dbus: 1  # Only required for bluetooth support
+    ports:
+      - 4317:4317                 # Only required if using PA over TCP socket
+    volumes:
+      - 'pulse:/run/pulse'        # Only required if using PA over UNIX socket
 
-# volumes:
-#   x11:
 volumes:
   settings:
-
+  pulse:  

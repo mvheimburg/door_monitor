@@ -5,7 +5,7 @@ from enum import StrEnum, IntEnum, auto
 
 class Size(IntEnum):
     height = 480
-    width = 720
+    width = 800
 
 class Views(StrEnum):
     HOME = auto()
