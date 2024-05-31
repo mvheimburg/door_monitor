@@ -24,7 +24,7 @@ services:
     ports:
       - 5555:5555
     volumes:
-      - 'pulse:/run/pulse'  
+      - 'pulse:/run/pulse'
 
   browser:
     image: bh.cr/balenalabs/browser-aarch64 # where <arch> is one of aarch64, arm32 or amd64
@@ -47,4 +47,4 @@ services:
 
 volumes:
   settings:
-  pulse:  
+  pulse:

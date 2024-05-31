@@ -3,8 +3,23 @@ from pathlib import Path
 import yaml
 
 from pydantic import BaseModel
+from pydantic_settings import BaseSettings
 
 from doorbell.models.models import MqttTopics
+
+
+
+from pydantic import (
+    Field,
+)
+
+class MqttSettings(BaseSettings):
+    broker_url: str = Field(alias='MQTT_BROKER', default='localhost')
+    broker_port: int = Field(alias='MQTT_PORT', default=1883)
+    username: str | None = Field(alias='MQTT_USERNAME', default=None)
+    password: str | None = Field(alias='MQTT_PASSWORD', default=None)
+    client_id: str = Field(alias='MQTT_CLIENT_ID', default="CLIENT")
+    
 
 class Setup(BaseModel):
     qos: int

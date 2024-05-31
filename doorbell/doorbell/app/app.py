@@ -1,6 +1,7 @@
 from pathlib import Path
 import time
-import asyncio
+from typing import Any
+from paho.mqtt.client import MQTTMessage
 import flet as ft
 from flet import (
     Page,
@@ -10,10 +11,15 @@ from flet import (
     Text
 
 )
+
+
+from doorbell.app.uix.keypad import KeyPad
 from doorbell.app.approot import AppRoot
 from doorbell.app.const import Views, Size
 from doorbell.app.views.home import Home
-
+from doorbell.mqtt.client import MqttClient
+from doorbell.mqtt.config import MqttTopics
+from doorbell.mqtt.payloads import GARAGE_COMMAND
 # url = "https://github.com/mdn/webaudio-examples/blob/main/audio-analyser/viper.mp3?raw=true"
 url = "/audio/bell-ringing-05.wav"
 
@@ -51,14 +57,42 @@ class App(AppRoot):
                 controls=[
                     Text("Home")
                 ])]
-
+        self.keypad = KeyPad()
+        self.keypad_dlg = ft.AlertDialog(
+                modal=True,
+                # title=ft.Text("Please confirm"),
+                content=self.keypad,
+                actions=[
+                    ft.TextButton("Submit", on_click=self.validate),
+                    ft.TextButton("Close", on_click=self.hide_keypad),
+                ],
+                # opacity=0.5,
+                actions_alignment=ft.MainAxisAlignment.END,
+                # on_dismiss=lambda e: print("Modal dialog dismissed!"),
+            )
         self.bellsound = None
-     
+
+        ## MQTT
+        self.mqttc = MqttClient()
+        self._topics = MqttTopics.load()
+    
 
     def initialize(self):
-        self.active_view = Views.HOME
+        self.change_view(Views.HOME)
         # self.home.start()
-        self.page.update()
+        # self.page.update()
+        # for door in self.doors_config.doors:
+        #     print(f"Subscribing: {door.topic.state}")
+        #     self._mqttc.subscribe(door.topic.state, qos=1)
+        self.mqttc.subscribe_callback(self._topics.garage.state,
+                                      self.update_garage)
+        self.mqttc.subscribe_callback(self._topics.mode.state,
+                                      self.update_mode)
+        self.mqttc.subscribe_callback(self._topics.state.state,
+                                      self.update_state)
+        self.mqttc.subscribe_callback(self._topics.bell.state,
+                                      self.update_bell)
+        self.mqttc.connect_std_creds()
 
     def deploy(self):
         ft.app(target=self.app, assets_dir=str(self.assets))
@@ -93,15 +127,17 @@ class App(AppRoot):
     @property
     def active_view(self):
         return self.get_view(self._active_view)
-    
+  
     @property
     def assets(self):
         return self._assets
-    
+ 
     @property
     def page(self):
         return self._page
- 
+
+    def validate(self, *args):
+        print(args)
  
     @active_view.setter
     def active_view(self, view: str):
@@ -111,7 +147,7 @@ class App(AppRoot):
         self.page.views.append(self.active_view)
         self.page.update()
 
-    def add_overlay(self, overlay):
+    def add_overlay(self, overlay: Any):
         self._page.overlay.append(overlay)
         self._page.update()
 
@@ -127,6 +163,7 @@ class App(AppRoot):
             raise ValueError("Unknown view")
         return v
 
+
     async def ring_bell(self, *args):
         print("Ringing bell")
         bellsound = ft.Audio(src=url,
@@ -135,14 +172,40 @@ class App(AppRoot):
                             balance=0,
                             on_loaded=lambda _: print("Loaded"),)
         self.add_overlay(bellsound)
+        await self.mqttc.ring_bell()
 
-    async def show_pin_start(self, *args):
-        self.pin_timer.start()
-        print("Styarting timer")
+    async def show_keypad(self, *args):
+        self.page.dialog = self.keypad_dlg
+        self.keypad_dlg.open = True
+        # self.controls = [ft.Stack(controls=[self.keypad, self._view()])]
+        self.page.update()
 
-    async def show_pin_end(self, *args):
-        if self.pin_timer.end() > 2:
-            print("Show pin")
+    async def hide_keypad(self, *args):
+        self.keypad_dlg.open = False
+        self.page.update()
 
-        else:
-            print("Too short")
+    async def validate(self, *args):
+        print("Validating")
+        self.keypad_dlg.open = False
+        self.page.update()
+
+    def update_garage(self, message: MQTTMessage):
+        print(message.payload)
+
+    def garage_open(self):
+        self.mqttc.garage_command(GARAGE_COMMAND.OPEN)
+
+    def garage_close(self):
+        self.mqttc.garage_command(GARAGE_COMMAND.CLOSE)
+
+    def garage_stop(self):
+        self.mqttc.garage_command(GARAGE_COMMAND.STOP)
+
+    def update_mode(self, message: MQTTMessage):
+        print(message.payload)
+
+    def update_state(self, message: MQTTMessage):
+        print(message.payload)
+
+    def update_bell(self, message: MQTTMessage):
+        print(message.payload)

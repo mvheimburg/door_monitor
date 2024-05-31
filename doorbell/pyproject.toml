@@ -13,6 +13,7 @@ dependencies = [
     "pydantic-settings>=2.2.1",
     "flet>=0.22.0",
     "hypercorn>=0.16.0",
+    "aiomqtt>=2.1.0",
 ]
 requires-python = ">=3.10.0"
 readme = "README.md"

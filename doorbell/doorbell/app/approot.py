@@ -25,15 +25,19 @@ class AppRoot(ABC):
     async def ring_bell(self):
         pass
 
-    @abstractmethod
-    async def show_pin_start(self):
-        pass
+    # @abstractmethod
+    # async def show_keypad(self):
+    #     pass
 
-    @abstractmethod
-    async def show_pin_end(self):
-        pass
+    # @abstractmethod
+    # async def hide_keypad(self):
+    #     pass
 
     @abstractmethod
     def run_task(self, func):
+        pass
+
+    @abstractmethod
+    def validate(self, *args):
         pass
         # self.page.run_task(func)

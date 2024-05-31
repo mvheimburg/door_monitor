@@ -1,22 +1,15 @@
-setup:
-    qos: 0
-    ssl: False
-
 bell:
     command: "bell/ring/toggle"
+    state: ""
 
 
 garage:
     command: "garage/gate/cmd"
     state: "garage/gate/state"
-    current: "Unknown"
 
 mode:
     command: "house/mode/cmd"
     state: "house/mode/state"
-    current: "Unknown"
-
 state:
     command: "house/state/cmd"
     state: "house/state/state"
-    current: "Unknown"

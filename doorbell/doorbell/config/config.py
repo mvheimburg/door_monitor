@@ -1,33 +1,28 @@
 from __future__ import annotations
-from pathlib import Path
-import yaml
 
 from pydantic import BaseModel
 
-from doorbell.models.models import MqttTopics
-from doorbell.models.models import Door
+from doorbell.models.models import MqttTopic
 
-class Setup(BaseModel):
-    qos: int
-    ssl: bool
+class Door(BaseModel):
+    id: str
+    name: str
+    topic: MqttTopic | None = None
+    state: str = "Unknown"
 
+    def get_state(self):
+        return self.state
 
-class MqttCfg(BaseModel):
-    setup: Setup
-    bell: MqttTopics
-    garage: MqttTopics
-    mode: MqttTopics
-    state: MqttTopics
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.topic.command=f"door/{self.id}/cmd"
+        self.topic.state=f"door/{self.id}/state"
 
-    @classmethod
-    def load(cls) -> MqttCfg:
-        p = Path(__file__).parent
-        cfg = p / "mqtt.yaml"
-        with cfg.open('r') as f:
-            data = yaml.load(f, Loader=yaml.FullLoader)
-        c = cls(**data)
-        return c
+    def unlock(self):
+        pass
 
+    def lock(self):
+        pass
 
 class DoorsConfig(BaseModel):
     doors: list[Door]
@@ -52,12 +47,3 @@ class DoorsConfig(BaseModel):
                 return door
 
         return None
-
-    @classmethod
-    def load(cls) -> MqttCfg:
-        p = Path(__file__).parent
-        cfg = p / "doors.yaml"
-        with cfg.open('r') as f:
-            data = yaml.load(f, Loader=yaml.FullLoader)
-        c = cls(**data)
-        return c

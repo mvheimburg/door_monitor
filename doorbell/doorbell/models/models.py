@@ -1,27 +1,34 @@
+from __future__ import annotations
+import yaml
+from typing import Callable
+from pathlib import Path
 from pydantic import BaseModel
-from typing import Optional
-from doorbell_old.const import LoginState
+from doorbell import config
+from paho.mqtt.client import MQTTMessage
+
+class MqttTopic(BaseModel):
+    command: str
+    state: str
 
 
 class MqttTopics(BaseModel):
-    command: str | None = None
-    state: str | None = None
-    current: str | None = None
+    bell: MqttTopic
+    garage: MqttTopic
+    mode: MqttTopic
+    state: MqttTopic
 
-
-
-class MQTTConfig(BaseModel):
-    client_id: str
-    port: int
-    broker: str
-    username: str
-    password: str
+    @classmethod
+    def load(cls) -> MqttTopics:
+        p = Path(config.__file__).parent
+        cfg = p / "topics.yaml"
+        with cfg.open('r') as f:
+            data = yaml.load(f, Loader=yaml.FullLoader)
+        c = cls(**data)
+        return c
 
 
 class APIConfig(BaseModel):
     url: str
-
-
 
 
 # class BellConfig(BaseModel):
@@ -29,26 +36,21 @@ class APIConfig(BaseModel):
 class AccessModel(BaseModel):
     name: str | None = None
     access_level: int = 0
-    login_state: LoginState = LoginState.OUT
+    # login_state: LoginState = LoginState.OUT
 
 
-class Door(BaseModel):
-    id: str
-    name: str
-    topic: MqttTopics = MqttTopics()
-    state: str = "Unknown"
 
-    def get_state(self):
-        return self.state
+class Subscription(BaseModel):
+    """Represents a MQTT subscription.
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.topic.command=f"door/{self.id}/cmd"
-        self.topic.state=f"door/{self.id}/state"
+    Attributes
+    ----------
+        topic : str
+            The topic name.
+        qos : int
+            The quality of service(QoS) level: 0, 1 and 2. Refer to the MQTT spec for details.
+    """
 
-    def unlock(self):
-        pass
-
-    def lock(self):
-        pass
-
+    topic: str
+    qos: int
+    # callback: Callable[[MQTTMessage], None]

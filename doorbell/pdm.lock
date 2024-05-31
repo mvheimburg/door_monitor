@@ -5,7 +5,21 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:48b6183cb1b3b7cb189a6cc2b4bb6e873b30fcda9002f35fa58f559e11627a06"
+content_hash = "sha256:ef097a50de859e1dc28c5eb8adb35ef3bbb8c67b17639b6f90c074531227ab63"
+
+[[package]]
+name = "aiomqtt"
+version = "2.1.0"
+requires_python = "<4.0,>=3.8"
+summary = "The idiomatic asyncio MQTT client, wrapped around paho-mqtt"
+groups = ["default"]
+dependencies = [
+    "paho-mqtt<3.0.0,>=2.0.0",
+]
+files = [
+    {file = "aiomqtt-2.1.0-py3-none-any.whl", hash = "sha256:ba62afe18e57b01ef28240f192b73cd54d7e42d827a47697997d3e6252a130d1"},
+    {file = "aiomqtt-2.1.0.tar.gz", hash = "sha256:8501c373c00fa7074a990a951285f31340c29b6541aea15e040da9ea33d79719"},
+]
 
 [[package]]
 name = "annotated-types"

@@ -20,6 +20,7 @@
             "module": "doorbell.main",
             "console": "integratedTerminal",
             "justMyCode": false,
+            "envFile": "${workspaceFolder}/dev.env",
             // "args":[
             //     "run",
             //     "main"
