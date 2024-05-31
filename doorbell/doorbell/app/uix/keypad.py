@@ -6,11 +6,12 @@ from doorbell.app.const import Size
 import flet as ft
 
 
-# class ACTIONS(Enum):
-#     DELETE = ft.icons.BACKSPACE
-#     SUBMIT = "Submit"
-#     CANCEL = "Cancel"
-#     BLANK = ""
+class ACTIONS(Enum):
+    DELETE = ft.icons.BACKSPACE
+    CLEAR = ft.icons.CLEAR
+    SUBMIT = "Submit"
+    CANCEL = "Cancel"
+    BLANK = ""
 
 
 KEYS = [
@@ -27,7 +28,17 @@ class Pin(list[int]):
     def append(self, object: int) -> None:
         if not len(self) >= 4:
             return super().append(object)
-        
+
+    def action(self, action: ACTIONS) -> None:
+        print(action)
+        match action:
+            case ACTIONS.DELETE:
+                self.pop()
+            case ACTIONS.CLEAR:
+                self.clear()
+            case _:
+                pass
+
     @property
     def text(self):
         textlist = ["*" for v in self]
@@ -35,40 +46,22 @@ class Pin(list[int]):
         return " ".join(textlist)
 
 
-
-
 class KeyPad(ft.Container):
 
     def __init__(self):
         super().__init__(width=Size.width/2, height=Size.height)
-        # self.validate = validate
-        # self.close = close
-        # self.width = Size.width
-        # self.height = Size.height
-        
         self.pin = Pin()
         self.keypad = ft.Row([
                     ft.Column(
-                        controls=[self.add_butt(key) for key in [1, 4, 7, ""]]
+                        controls=[self.add_butt(key) for key in [1, 4, 7, ACTIONS.CLEAR]]
                     ),
                     ft.Column(
                         controls=[self.add_butt(key) for key in [2, 5, 8, 0]]
                     ),
                     ft.Column(
-                        controls=[self.add_butt(key) for key in [3, 6, 9, ""]]
+                        controls=[self.add_butt(key) for key in [3, 6, 9, ACTIONS.DELETE]]
                     ),
                 ])
-
-        # self.content = ft.Row([
-        #     ft.Column([
-        #         self.keypad
-        #          ]),
-        #     ft.Column([
-        #         ft.Row([
-        #             ft.Text(self.pin.text)
-        #         ])
-        #     ])
-        # ])
         self.content = self._content(self.pin.text)
 
     def _content(self, text: str):
@@ -83,26 +76,17 @@ class KeyPad(ft.Container):
             ])
         ])
 
-        # self.content = ft.GridView(
-        #     # expand=1,
-        #     horizontal=False,
-        #     runs_count=4,
-        #     max_extent=80,
-        #     child_aspect_ratio=2.0,
-        #     spacing=5,
-        #     run_spacing=5,
-        # )
-        # for key in KEYS
-
-
-    def add_butt(self, key: str | int) -> ft.TextButton | ft.Container:
+    def add_butt(self, key: ACTIONS | int) -> ft.TextButton | ft.Container:
         if isinstance(key, int):
             return ft.TextButton(
                     text=str(key),
                     on_click=partial(self.num_pressed, key)
                 )
         else:
-            return ft.Container()
+            return ft.IconButton(
+                    icon=key.value,
+                    on_click=partial(self.action_pressed, key)
+            )
 
     def num_pressed(self, num: int, *args):
         print(num)
@@ -111,6 +95,19 @@ class KeyPad(ft.Container):
         self.content = self._content(self.pin.text)
         self.update()
 
+    def action_pressed(self, action: ACTIONS, *args):
+        self.pin.action(action)
+        self.content = self._content(self.pin.text)
+        self.update()
+
+    def get_pin(self) -> Pin:
+        return self.pin
+
+
+    def clear(self):
+        self.pin.clear()
+        self.content = self._content(self.pin.text)
+        self.update()
 
         # self.content = ft.Column(
         #     controls=[ft.Row(

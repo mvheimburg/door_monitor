@@ -75,15 +75,9 @@ class App(AppRoot):
         ## MQTT
         self.mqttc = MqttClient()
         self._topics = MqttTopics.load()
-    
 
     def initialize(self):
         self.change_view(Views.HOME)
-        # self.home.start()
-        # self.page.update()
-        # for door in self.doors_config.doors:
-        #     print(f"Subscribing: {door.topic.state}")
-        #     self._mqttc.subscribe(door.topic.state, qos=1)
         self.mqttc.subscribe_callback(self._topics.garage.state,
                                       self.update_garage)
         self.mqttc.subscribe_callback(self._topics.mode.state,
@@ -136,9 +130,6 @@ class App(AppRoot):
     def page(self):
         return self._page
 
-    def validate(self, *args):
-        print(args)
- 
     @active_view.setter
     def active_view(self, view: str):
         print(f"Should set view {view}")
@@ -163,7 +154,6 @@ class App(AppRoot):
             raise ValueError("Unknown view")
         return v
 
-
     async def ring_bell(self, *args):
         print("Ringing bell")
         bellsound = ft.Audio(src=url,
@@ -174,19 +164,20 @@ class App(AppRoot):
         self.add_overlay(bellsound)
         await self.mqttc.ring_bell()
 
-    async def show_keypad(self, *args):
+    async def show_keypad(self, ce: ft.ControlEvent):
         self.page.dialog = self.keypad_dlg
         self.keypad_dlg.open = True
         # self.controls = [ft.Stack(controls=[self.keypad, self._view()])]
         self.page.update()
 
-    async def hide_keypad(self, *args):
+    async def hide_keypad(self, ce: ft.ControlEvent):
+        self.keypad.clear()
         self.keypad_dlg.open = False
         self.page.update()
 
-    async def validate(self, *args):
-        print("Validating")
-        self.keypad_dlg.open = False
+    async def validate(self, ce: ft.ControlEvent):
+        print(f"Validating pin: {self.keypad.get_pin()}")
+        await self.hide_keypad()
         self.page.update()
 
     def update_garage(self, message: MQTTMessage):

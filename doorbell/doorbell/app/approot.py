@@ -1,15 +1,13 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from flet import (
-    Page
-)
+import flet as ft
 
 
 class AppRoot(ABC):
 
     @property
     @abstractmethod
-    def page(self) -> Page:
+    def page(self) -> ft.Page:
         pass
 
     @property
@@ -38,6 +36,6 @@ class AppRoot(ABC):
         pass
 
     @abstractmethod
-    def validate(self, *args):
+    async def validate(self, ce: ft.ControlEvent):
         pass
         # self.page.run_task(func)
