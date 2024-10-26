@@ -1,6 +1,6 @@
 cluster:
   peerAddresses: 
-    - 192.168.1.2:6425
+    - 192.168.1.3:6425
   port: 6425
 global:
   instanceName: main-door
@@ -26,7 +26,7 @@ bluetoothLowEnergy:
   #   - d1338ace002d44af88d1e57c12484966-1-23442
   # maxDistance: 5
 homeAssistant:
-  mqttUrl: mqtt://192.168.1.2:1883
+  mqttUrl: mqtt://192.168.1.5:1883
   mqttOptions:
     username: doormonitorpresence
     password: doormonitorpresence!

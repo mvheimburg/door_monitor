@@ -13,27 +13,14 @@ services:
       - 6425:6425  
       - 6415:6415
 
-  # doorbell:
-  #   build: 
-  #     context: doorbell
-  #     dockerfile: Dockerfile
-  #   privileged: true
-  #   labels:
-  #     io.balena.features.dbus: 1 
-  #   restart: always
-  #   ports:
-  #     - 5555:5555
-  #   volumes:
-  #     - 'pulse:/run/pulse'
-
   browser:
-    image: bh.cr/balenalabs/browser-aarch64 # where <arch> is one of aarch64, arm32 or amd64
+    image: bh.cr/balenalabs/browser-armv7hf # where <arch> is one of aarch64, arm32 or amd64
     privileged: true # required for UDEV to find plugged in peripherals such as a USB mouse
     ports:
         - 5011:5011 # management API (optional)
         - 35173:35173 # Chromium debugging port (optional)
-    volumes:
-      - 'settings:/data' # Only required if using PERSISTENT flag (see below)
+    # volumes:
+    #   - 'settings:/data' # Only required if using PERSISTENT flag (see below)
 
   audio:
     image: bh.cr/balenalabs/audio-rpi # where <arch> is one of rpi, armv7hf, aarch64 or amd64
@@ -45,6 +32,6 @@ services:
     # volumes:
     #   - 'pulse:/run/pulse'        # Only required if using PA over UNIX socket
 
-volumes:
-  settings:
+# volumes:
+#   settings:
   # pulse:

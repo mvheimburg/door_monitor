@@ -1,7 +1,0 @@
-doors:
-    - id: main
-      name: Front
-    - id: garage
-      name: Garasje
-    - id: workshop
-      name: Verksted
