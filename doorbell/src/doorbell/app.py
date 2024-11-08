@@ -22,6 +22,7 @@ class App:
         mqttc: MqttClient | None = None
     ):
         self._mqttc = mqttc or MqttClient(logger=_LOGGER, message_handle=self.message_handle)
+
         self._bellsound = ft.Audio(
             src=BELL_WAV,
             # autoplay=True,
@@ -29,6 +30,8 @@ class App:
             balance=0,
             on_loaded=lambda _: print("wav rdy"),
         )
+        self._home = Home(ring_bell=self.ring_bell)
+
 
     def ring_bell(self, *args):
         _LOGGER.debug("Ringing bell")
@@ -53,7 +56,8 @@ class App:
         self._page.fonts = {"Pacifico": "/Pacifico-Regular.ttf"}
 
         self._page.overlay.append(self._bellsound)
-        self._page.add(Home(ring_bell=self.ring_bell))
+        self._page.add(self._home)
+        self._home.loop_images()
         self._mqttc.connect()
 
     #         self.home = Home(app=self)

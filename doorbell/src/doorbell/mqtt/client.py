@@ -4,6 +4,7 @@ import logging
 # from gmqtt import Client
 
 import paho.mqtt.client as mqtt
+from paho.mqtt.client import MQTTMessage
 from paho.mqtt import MQTTException
 from types import TracebackType
 
@@ -102,7 +103,7 @@ class MqttClient:
         print("reason_code: " + str(reason_code))
 
 
-    def on_message(self, mqttc, obj, msg):
+    def on_message(self, mqttc, obj, msg: MQTTMessage):
         print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
         if self._message_handle is not None:
             self._message_handle(msg.topic, msg.payload)
