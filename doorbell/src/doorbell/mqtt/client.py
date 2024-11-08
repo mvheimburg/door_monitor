@@ -4,7 +4,7 @@ import logging
 # from gmqtt import Client
 
 import paho.mqtt.client as mqtt
-from paho.mqtt.client import MQTTMessage
+from paho.mqtt import MQTTException
 from types import TracebackType
 
 from doorbell.mqtt.mqttconst import BELL, GATE
@@ -30,8 +30,8 @@ class MqttClient:
         # self._client.on_message = self._on_message
         # self._client.on_connect = self._on_connect
         self._client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
-        self._client.host = self._settings.host
-        self._client.port = self._settings.port
+        # self._client.host = self._settings.host
+        # self._client.port = self._settings.port
         self._client.username = self._settings.username
         self._client.password = self._settings.password
         self._client.on_message = self.on_message
@@ -65,7 +65,7 @@ class MqttClient:
         """Connecting to broker"""
         print(f"Connecting to host={self._settings.host}, port={self._settings.port}")
         self._client.connect(
-            host=self._settings.host, port=self._settings.port, ssl=self._settings.setup.ssl
+            host=self._settings.host, port=self._settings.port
         )
         print("Connected to broker")
 
@@ -93,7 +93,7 @@ class MqttClient:
 
     def _publish(self, topic: str, payload: str):
         print('ringing that bell')
-        if not self._client.is_connected():
+        if not self._client.is_connected:
             self._client.reconnect()
         self._client.publish(topic, payload=payload)
 
@@ -102,7 +102,7 @@ class MqttClient:
         print("reason_code: " + str(reason_code))
 
 
-    def on_message(self, mqttc, obj, msg: MQTTMessage):
+    def on_message(self, mqttc, obj, msg):
         print(msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
         if self._message_handle is not None:
             self._message_handle(msg.topic, msg.payload)

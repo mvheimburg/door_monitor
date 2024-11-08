@@ -30,18 +30,18 @@ class App:
             on_loaded=lambda _: print("wav rdy"),
         )
 
-    async def ring_bell(self, *args):
+    def ring_bell(self, *args):
         _LOGGER.debug("Ringing bell")
         self._bellsound.play()
-        # async with mqttc:
-        await self._mqttc.ring_bell()
+        # with mqttc:
+        self._mqttc.ring_bell()
         # page.update()
 
-    async def message_handle(self, topic: str, payload: str):
+    def message_handle(self, topic: str, payload: str):
         print(topic)
         print(payload)
 
-    async def run(self, page: ft.Page):
+    def run(self, page: ft.Page):
         self._page = page
         self._page.title = "Doorbell"
         self._page.padding = 0
@@ -54,7 +54,7 @@ class App:
 
         self._page.overlay.append(self._bellsound)
         self._page.add(Home(ring_bell=self.ring_bell))
-        await self._mqttc.connect()
+        self._mqttc.connect()
 
     #         self.home = Home(app=self)
     #         self.pin_timer = Timer()
@@ -92,8 +92,8 @@ class App:
     #         #                               self.update_bell)
     #         # self.mqttc.connect_std_creds()
 
-    async def deploy(self):
-        await ft.app_async(target=self.run, assets_dir=ASSETS)
+    def deploy(self):
+        ft.app(target=self.run, assets_dir=ASSETS)
 
     def serve(self):
         app = ft.app(target=self.run, assets_dir=ASSETS, export_asgi_app=True)
@@ -167,28 +167,28 @@ class App:
 #             raise ValueError("Unknown view")
 #         return v
 
-#     async def ring_bell(self, *args):
+#     def ring_bell(self, *args):
 #         print("Ringing bell")
 #         bellsound = ft.Audio(src=url,
 #                             autoplay=True,
 #                             volume=0.5,
 #                             balance=0,
 #                             on_loaded=lambda _: print("DingDong"))
-#         # await self.mqttc.ring_bell()
+#         # self.mqttc.ring_bell()
 
-#     async def show_keypad(self, ce: ft.ControlEvent):
+#     def show_keypad(self, ce: ft.ControlEvent):
 #         self.page.dialog = self.keypad_dlg
 #         self.keypad_dlg.open = True
 #         self.page.update()
 
-#     async def hide_keypad(self, ce: ft.ControlEvent):
+#     def hide_keypad(self, ce: ft.ControlEvent):
 #         self.keypad.clear()
 #         self.keypad_dlg.open = False
 #         self.page.update()
 
-#     async def validate(self, ce: ft.ControlEvent):
+#     def validate(self, ce: ft.ControlEvent):
 #         print(f"Validating pin: {self.keypad.get_pin()}")
-#         await self.hide_keypad()
+#         self.hide_keypad()
 #         self.page.update()
 
 #     def update_garage(self, message: MQTTMessage):
@@ -213,18 +213,18 @@ class App:
 #         print(message.payload)
 
 
-async def main(page: ft.Page):
-    async with MqttClient(logger=_LOGGER) as mqttc:
-        # mqttc =
-        await mqttc.connect()
+# def main(page: ft.Page):
+#     with MqttClient(logger=_LOGGER) as mqttc:
+#         # mqttc =
+#         mqttc.connect()
         # mqttc._message_handle = message_handle
         # page.adaptive = True
         #
-        # async def listen(client: Client):
-        #     async for message in client.messages:
+        # def listen(client: Client):
+        #     for message in client.messages:
         #         print(message.payload)
 
-        # async with  Client(hostname=MqttSettings.host,
+        # with  Client(hostname=MqttSettings.host,
         #                   port=MqttSettings.port,
         #                   username=MqttSettings.username,
         #                   password=MqttSettings.password,
@@ -233,15 +233,15 @@ async def main(page: ft.Page):
         #     # Make client globally available
         #     client = c
         #     # Listen for MQTT messages in (unawaited) asyncio task
-        #     await client.subscribe("humidity/#")
+        #     client.subscribe("humidity/#")
         #     loop = asyncio.get_event_loop()
         #     task = loop.create_task(listen(client))
         #     yield
 
         # background_tasks = set()
 
-        # await mqttc.subscribe(GATE.STATE.TOPIC)
-        # await mqttc.subscribe(BELL.TOPIC)
+        # mqttc.subscribe(GATE.STATE.TOPIC)
+        # mqttc.subscribe(BELL.TOPIC)
 
         # loop = asyncio.get_event_loop()
         # task = loop.create_task(listen(mqttc))
@@ -257,11 +257,11 @@ async def main(page: ft.Page):
         # )
         # page.overlay.append(bellsound)
 
-        # async def ring_bell(*args):
+        # def ring_bell(*args):
         #     _LOGGER.debug("Ringing bell")
         #     bellsound.play()
-        #     # async with mqttc:
-        #     await mqttc.ring_bell()
+        #     # with mqttc:
+        #     mqttc.ring_bell()
         #     # page.update()
 
         # page.add(Home(ring_bell=ring_bell))
@@ -277,32 +277,32 @@ async def main(page: ft.Page):
         # page.bgcolor = colors.BLUE_GREY_200
 
     # mqttc = MqttClient(logger=_LOGGER)
-    # await mqttc.connect()
+    # mqttc.connect()
 
     # interval = 5  # Seconds
     # while True:
     #     try:
-    #         async with MqttClient(logger=_LOGGER) as mqttc:
-    #             # await client.subscribe("humidity/#")
-    #             # async for message in client.messages:
+    #         with MqttClient(logger=_LOGGER) as mqttc:
+    #             # client.subscribe("humidity/#")
+    #             # for message in client.messages:
     #             #     print(message.payload)
 
     #             print(mqttc)
-    #             # async for message in client.messages:
+    #             # for message in client.messages:
     #             #     print(message.payload)
-    #             await page_runner(page, mqttc)
+    #             page_runner(page, mqttc)
     #             yield
     #     except MQTTConnectError:
     #         print(f"Connection lost; Reconnecting in {interval} seconds ...")
-    #         await asyncio.sleep(interval)
+    #         asyncio.sleep(interval)
 
-    # async with Client(hostname=MqttSettings.host,
+    # with Client(hostname=MqttSettings.host,
     #                   port=MqttSettings.port,
     #                   username=MqttSettings.username,
     #                   password=MqttSettings.password,
     #                 #   transport="websockets"
     #                   ) as client:
     #     print(client)
-    #     # async for message in client.messages:
+    #     # for message in client.messages:
     #     #     print(message.payload)
-    #     await page_runner(page, client)
+    #     page_runner(page, client)

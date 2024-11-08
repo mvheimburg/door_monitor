@@ -1,5 +1,4 @@
 from doorbell.app import App
-import asyncio
 
 app = App()
 # app.serve()
