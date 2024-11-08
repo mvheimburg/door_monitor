@@ -1,0 +1,48 @@
+[project]
+name = "doorbell"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "mvheimburg", email = "heimburg@gmail.com"},
+]
+dependencies = [
+    "PyYAML",
+    "paho-mqtt>=2.1.0",
+    "rpi-backlight",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "flet>=0.24.1",
+    "aiomqtt>=2.3.0",
+    "sqlalchemy>=2.0.30",
+    "sqlalchemy-utils>=0.41.2",
+    "gpiozero>=2.0.1",
+    "uvicorn>=0.32.0",
+    "gmqtt>=0.6.16",
+]
+requires-python = ">=3.13.0"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = true
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "ruff>=0.3.7",
+]
+
+[tool.pdm.scripts]
+linux = "python3 -m src.doorbell.main"
+serve = "python3 -m src.doorbell.serve"
+
+
+[tool.flet.app]
+module = "main"
+path = "src/doorbell"
+exclude = ["assets"]
+
+[tool.flet.compile]
+app = false
+packages = false
+cleanup = false

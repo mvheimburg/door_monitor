@@ -1,4 +1,8 @@
 version: '2.1'
+
+volumes:
+  x11:
+
 services:
 
   ra-main-door:
@@ -13,24 +17,72 @@ services:
       - 6425:6425  
       - 6415:6415
 
-  browser:
-    image: bh.cr/balenalabs/browser-armv7hf # where <arch> is one of aarch64, arm32 or amd64
-    privileged: true # required for UDEV to find plugged in peripherals such as a USB mouse
-    ports:
-        - 5011:5011 # management API (optional)
-        - 35173:35173 # Chromium debugging port (optional)
-    # volumes:
-    #   - 'settings:/data' # Only required if using PERSISTENT flag (see below)
 
-  audio:
-    image: bh.cr/balenalabs/audio-rpi # where <arch> is one of rpi, armv7hf, aarch64 or amd64
+  xserver:
+    # Replace <arch> with your own machines architecture. The default architecture without a - is `amd64`
+    image: bh.cr/balenalabs/xserver-aarch64
+    restart: always
     privileged: true
-    labels:
-      io.balena.features.dbus: 1  # Only required for bluetooth support
+    # environment:
+    #   CURSOR: false
+    #   DISPLAY_ORIENTATION: inverted
+    volumes:
+      - 'x11:/tmp/.X11-unix'
+
+  gui:
+    build:
+      context: doorbell
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    # env_file: 
+    #   - doorbell/.env
+    command: ./start.sh
+    # command: sleep infinity
+    environment:
+      DOORBELL_PORT: 5556
+      MQTT_CLIENT_ID: doorbell
+      MQTT_USERNAME: doorbell
+      MQTT_PASSWORD: doorbell!
+      # MQTT_HOST: mosquitto
+      MQTT_HOST: 192.168.1.5
+      MQTT_PORT: 1883
+      DISPLAY: :0
+    devices:
+      - /dev/dri
+    # group_add:
+    #   - video
     ports:
-      - 4317:4317                 # Only required if using PA over TCP socket
-    # volumes:
-    #   - 'pulse:/run/pulse'        # Only required if using PA over UNIX socket
+      - 5556:5556
+    volumes:
+      - 'x11:/tmp/.X11-unix'
+  # browser:
+  #   image: bh.cr/balenalabs/browser-aarch64 # where <arch> is one of aarch64, arm32 or amd64
+  #   privileged: true # required for UDEV to find plugged in peripherals such as a USB mouse
+  #   restart: unless-stopped
+  #   ports:
+  #       - 5011:5011 # management API (optional)
+  #       - 35173:35173 # Chromium debugging port (optional)
+  #   # volumes:
+  #   #   - 'settings:/data' # Only required if using PERSISTENT flag (see below)
+
+  # browser-control:
+  #   # image: bh.cr/will_philson/browsercontrol-aarch64
+  #   image: balenablocks/browsercontrol
+  #   restart: unless-stopped
+  #   network_mode: host
+  #   privileged: true
+  #   ports:
+  #     - 80:80
+
+  # audio:
+  #   image: bh.cr/balenalabs/audio-rpi # where <arch> is one of rpi, armv7hf, aarch64 or amd64
+  #   privileged: true
+  #   labels:
+  #     io.balena.features.dbus: 1  # Only required for bluetooth support
+  #   ports:
+  #     - 4317:4317                 # Only required if using PA over TCP socket
+  #   # volumes:
+  #   #   - 'pulse:/run/pulse'        # Only required if using PA over UNIX socket
 
 # volumes:
 #   settings:

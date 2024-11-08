@@ -1,0 +1,32 @@
+bell:
+    command: "bell/ring/toggle"
+    state: ""
+
+
+garage:
+    command: "garage/gate/cmd"
+    state: "garage/gate/state"
+
+mode:
+    command: "house/mode/cmd"
+    state: "house/mode/state"
+state:
+    command: "house/state/cmd"
+    state: "house/state/state"
+
+
+
+#define MQTT_GATE_TOPIC_CMD "garage/gate/cmd"
+#define PAYLOAD_CMD_GATE_OPEN "OPEN"
+#define PAYLOAD_CMD_GATE_CLOSE "CLOSE"
+#define PAYLOAD_CMD_GATE_STOP "STOP"
+
+#define MQTT_GATE_TOPIC_STATUS "garage/gate/state"
+#define PAYLOAD_GATE_OPENED "open"
+#define PAYLOAD_GATE_OPENING "opening"
+#define PAYLOAD_GATE_CLOSED "closed"
+#define PAYLOAD_GATE_CLOSING "closing"
+
+#define MQTT_GATE_TOPIC_POSITION "garage/gate/position"
+#define GATE_POS_OPEN 100
+#define GATE_POS_CLOSED 0
